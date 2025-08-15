@@ -1,4 +1,4 @@
-// Ram Naam Jap Counter App - Navigation Fixed Version
+// Ram Naam Jap Counter App - Mobile Optimized with Dual Audio
 class RamNameJapApp {
     constructor() {
         this.currentCount = 0;
@@ -7,234 +7,276 @@ class RamNameJapApp {
         this.chart = null;
         this.currentPeriod = 'daily';
         this.soundEnabled = true;
-        this.volume = 0.7;
+        this.backgroundMusicEnabled = true;
+        this.backgroundVolume = 0.3;
+        this.tapVolume = 0.7;
         this.achievements = [100, 500, 1000, 2400, 5000, 10000, 25000, 50000, 100000];
-        this.audio = null;
-        this.isAudioInitialized = false;
+        this.audioInitialized = false;
+        
+        // Audio elements
+        this.backgroundAudio = null;
+        this.namAudio = null;
         
         this.initializeApp();
     }
 
     initializeApp() {
-        console.log('Initializing Ram Naam Jap App...');
         this.loadData();
         this.initializeAudio();
+        this.setupEventListeners();
         this.updateDisplay();
         this.hideLoadingScreen();
         this.updateProgressRing();
         this.updateDailyGoal();
         this.renderAchievements();
-        this.calculateStreak();
         
-        // Setup event listeners after a small delay to ensure DOM is ready
+        // Try to start background music immediately and set up fallbacks
         setTimeout(() => {
-            this.setupEventListeners();
-        }, 200);
+            this.startBackgroundMusic();
+        }, 500);
     }
 
     initializeAudio() {
-        this.audio = document.getElementById('nam-audio');
-        if (this.audio) {
-            this.audio.volume = this.volume;
-            this.audio.preload = 'auto';
+        // Initialize background audio
+        this.backgroundAudio = document.getElementById('background-audio');
+        if (this.backgroundAudio) {
+            this.backgroundAudio.volume = this.backgroundVolume;
+            this.backgroundAudio.loop = true;
+            this.backgroundAudio.preload = 'auto';
             
-            this.audio.addEventListener('canplaythrough', () => {
-                this.isAudioInitialized = true;
-                console.log('Audio initialized successfully');
+            // Add event listeners for audio
+            this.backgroundAudio.addEventListener('canplaythrough', () => {
+                console.log('Background audio can play through');
+                if (this.backgroundMusicEnabled) {
+                    this.tryPlayBackgroundMusic();
+                }
             });
-
-            this.audio.addEventListener('error', () => {
-                console.log('Audio file not found, using Web Audio API fallback');
-                this.isAudioInitialized = false;
+            
+            this.backgroundAudio.addEventListener('loadeddata', () => {
+                console.log('Background audio loaded');
+                if (this.backgroundMusicEnabled) {
+                    this.tryPlayBackgroundMusic();
+                }
             });
         }
 
-        // Enable audio context on first user interaction
-        const enableAudio = () => {
-            if (this.audio && this.audio.paused) {
-                this.audio.play().then(() => {
-                    this.audio.pause();
-                    this.audio.currentTime = 0;
-                    console.log('Audio context enabled');
-                }).catch(() => {
-                    console.log('Audio context activation failed');
-                });
-            }
-        };
+        // Initialize tap audio
+        this.namAudio = document.getElementById('nam-audio');
+        if (this.namAudio) {
+            this.namAudio.volume = this.tapVolume;
+            this.namAudio.preload = 'auto';
+        }
         
-        document.addEventListener('click', enableAudio, { once: true, capture: true });
-        document.addEventListener('touchstart', enableAudio, { once: true, capture: true });
+        this.audioInitialized = true;
+    }
+
+    tryPlayBackgroundMusic() {
+        if (!this.backgroundAudio || !this.backgroundMusicEnabled) return;
+        
+        const playPromise = this.backgroundAudio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('Background music started successfully');
+            }).catch(error => {
+                console.log('Background music autoplay prevented:', error);
+                // Don't set up fallback here, it's handled in startBackgroundMusic
+            });
+        }
+    }
+
+    startBackgroundMusic() {
+        if (!this.backgroundMusicEnabled || !this.backgroundAudio) return;
+
+        // Multiple attempts to play background music
+        this.tryPlayBackgroundMusic();
+        
+        // Set up autoplay fallback for first user interaction
+        this.setupAutoplayFallback();
+        
+        // Try again after a short delay
+        setTimeout(() => {
+            if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
+                this.tryPlayBackgroundMusic();
+            }
+        }, 1000);
+    }
+
+    setupAutoplayFallback() {
+        let musicStarted = false;
+        
+        const startMusic = () => {
+            if (musicStarted || !this.backgroundMusicEnabled || !this.backgroundAudio) return;
+            
+            this.backgroundAudio.play().then(() => {
+                musicStarted = true;
+                console.log('Background music started via user interaction');
+            }).catch(console.error);
+        };
+
+        // Add multiple event listeners to catch first interaction
+        const events = ['touchstart', 'touchend', 'click', 'keydown'];
+        events.forEach(eventType => {
+            document.addEventListener(eventType, startMusic, { once: true, passive: true });
+        });
+        
+        // Clean up after 10 seconds
+        setTimeout(() => {
+            events.forEach(eventType => {
+                document.removeEventListener(eventType, startMusic);
+            });
+        }, 10000);
     }
 
     hideLoadingScreen() {
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('hidden');
-            }
+            loadingScreen.classList.add('hidden');
+            
+            // Try to start music again after loading screen disappears
+            setTimeout(() => {
+                if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
+                    this.tryPlayBackgroundMusic();
+                }
+            }, 100);
         }, 1500);
     }
 
     setupEventListeners() {
-        console.log('Setting up event listeners...');
-        
-        // CRITICAL: Setup navigation with highest priority (capture phase)
+        // Set up navigation first
         this.setupNavigation();
         
-        // Setup counter functionality with lower priority
-        setTimeout(() => {
-            this.setupCounterArea();
-        }, 50);
+        // Set up tap areas for counter (everywhere except header and footer)
+        this.setupTapAreas();
         
-        // Setup other interactions
-        setTimeout(() => {
-            this.setupOtherEventListeners();
-        }, 100);
-        
+        // Set up other interactive elements
+        this.setupOtherEventListeners();
+
         // Prevent context menu
-        document.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
-
-    setupNavigation() {
-        console.log('Setting up navigation with high priority...');
-        
-        // Remove ALL existing event listeners on navigation elements
-        const allNavButtons = document.querySelectorAll('.nav-btn, [data-screen]');
-        allNavButtons.forEach(btn => {
-            // Clone and replace to remove all listeners
-            const newBtn = btn.cloneNode(true);
-            if (btn.parentNode) {
-                btn.parentNode.replaceChild(newBtn, btn);
-            }
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
 
-        // Setup navigation with capture phase (highest priority)
-        setTimeout(() => {
-            // Home navigation
-            document.querySelectorAll('[data-screen="home"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    console.log('HOME clicked');
-                    this.navigateToScreen('home');
-                    return false;
-                }, { capture: true, passive: false });
-            });
-
-            // Dashboard navigation  
-            document.querySelectorAll('[data-screen="dashboard"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    console.log('DASHBOARD clicked');
-                    this.navigateToScreen('dashboard');
-                    return false;
-                }, { capture: true, passive: false });
-            });
-
-            // Resources navigation
-            document.querySelectorAll('[data-screen="resources"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    console.log('RESOURCES clicked');
-                    this.navigateToScreen('resources');
-                    return false;
-                }, { capture: true, passive: false });
-            });
-
-            // Settings navigation
-            document.querySelectorAll('[data-screen="settings"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    console.log('SETTINGS clicked');
-                    this.navigateToScreen('settings');
-                    return false;
-                }, { capture: true, passive: false });
-            });
-
-            console.log('Navigation listeners attached with capture=true');
-        }, 10);
-    }
-
-    setupCounterArea() {
-        console.log('Setting up counter area...');
-        
-        // Counter functionality - only works on home screen and NOT on navigation elements
-        const counterElements = [
-            '.center-circle-container',
-            '#counter-display',
-            '.daily-goal-section'
-        ];
-
-        counterElements.forEach(selector => {
-            const element = document.querySelector(selector);
-            if (element) {
-                element.addEventListener('click', (e) => {
-                    // CRITICAL: Check if clicked element is navigation
-                    if (e.target.closest('.nav-btn') || e.target.closest('[data-screen]') || e.target.closest('.bottom-nav')) {
-                        console.log('Counter blocked - navigation element clicked');
-                        return; // Don't increment counter
-                    }
-                    
-                    if (this.currentScreen === 'home') {
-                        console.log('Counter area clicked - valid');
-                        this.handleTap();
-                    }
-                }, { passive: false, capture: false }); // Use bubble phase for counter
-            }
-        });
-
-        // Keyboard support
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && this.currentScreen === 'home') {
                 e.preventDefault();
-                this.handleTap();
+                this.incrementCounter();
             }
         });
+
+        // Page visibility change - pause/resume background music
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (this.backgroundAudio && !this.backgroundAudio.paused) {
+                    this.backgroundAudio.pause();
+                }
+            } else {
+                if (this.backgroundAudio && this.backgroundMusicEnabled) {
+                    this.tryPlayBackgroundMusic();
+                }
+            }
+        });
+    }
+
+    setupNavigation() {
+        const navButtons = document.querySelectorAll('.nav-btn');
+        navButtons.forEach(btn => {
+            // Use both touch and click events for better mobile support
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const screen = btn.getAttribute('data-screen');
+                this.navigateToScreen(screen);
+                
+                // Try to start background music on first navigation
+                this.ensureBackgroundMusic();
+            }, { passive: false });
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const screen = btn.getAttribute('data-screen');
+                this.navigateToScreen(screen);
+                
+                // Try to start background music on first click
+                this.ensureBackgroundMusic();
+            });
+        });
+    }
+
+    ensureBackgroundMusic() {
+        if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
+            this.tryPlayBackgroundMusic();
+        }
+    }
+
+    setupTapAreas() {
+        // Create tap areas covering the entire screen except header and footer
+        document.addEventListener('touchend', (e) => {
+            this.handleTap(e);
+        }, { passive: false });
+
+        document.addEventListener('click', (e) => {
+            this.handleTap(e);
+        });
+    }
+
+    handleTap(e) {
+        // Only handle taps on home screen
+        if (this.currentScreen !== 'home') return;
+
+        // Check if tap is in excluded areas
+        const target = e.target;
+        const excludedSelectors = ['.header', '.bottom-nav', 'header', 'footer', 'nav', '.nav-btn'];
+        
+        for (let selector of excludedSelectors) {
+            if (target.closest(selector)) {
+                return; // Don't increment counter for excluded areas
+            }
+        }
+
+        // Don't handle taps on interactive elements like buttons or links
+        if (target.tagName === 'BUTTON' || target.tagName === 'A' || target.tagName === 'INPUT') {
+            return;
+        }
+
+        // Increment counter for valid tap areas
+        e.preventDefault();
+        this.incrementCounter();
+        
+        // Ensure background music starts on first tap
+        this.ensureBackgroundMusic();
     }
 
     setupOtherEventListeners() {
-        // Chart tabs - use specific IDs to avoid conflicts
-        ['daily', 'weekly', 'monthly', 'yearly', 'lifetime'].forEach(period => {
-            const tab = document.getElementById(`tab-${period}`);
-            if (tab) {
-                tab.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    console.log(`Chart tab ${period} clicked`);
-                    this.switchChartPeriod(period);
-                });
-            }
+        // Chart tabs
+        const chartTabs = document.querySelectorAll('.chart-tab');
+        chartTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const period = tab.getAttribute('data-period');
+                this.switchChartPeriod(period);
+            });
         });
 
-        // Settings controls
-        this.setupSettingsListeners();
+        // Settings event listeners
+        this.setupSettingsEventListeners();
 
         // Achievement modal
-        const closeBtn = document.getElementById('close-achievement');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.hideAchievementModal());
-        }
-        
-        const modalOverlay = document.getElementById('modal-overlay');
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', () => this.hideAchievementModal());
+        const closeAchievementBtn = document.getElementById('close-achievement');
+        if (closeAchievementBtn) {
+            closeAchievementBtn.addEventListener('click', () => {
+                this.hideAchievementModal();
+            });
         }
     }
 
-    setupSettingsListeners() {
+    setupSettingsEventListeners() {
         // Save daily goal
         const saveGoalBtn = document.getElementById('save-goal-btn');
         if (saveGoalBtn) {
-            saveGoalBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Save goal button clicked');
+            saveGoalBtn.addEventListener('click', () => {
                 this.saveDailyGoal();
             });
         }
@@ -244,97 +286,122 @@ class RamNameJapApp {
         if (soundToggle) {
             soundToggle.addEventListener('change', (e) => {
                 this.soundEnabled = e.target.checked;
-                console.log('Sound toggle changed:', this.soundEnabled);
                 this.saveData();
             });
         }
 
-        // Volume control
-        const volumeSlider = document.getElementById('volume-slider');
-        if (volumeSlider) {
-            volumeSlider.addEventListener('input', (e) => {
-                this.volume = parseFloat(e.target.value);
-                if (this.audio) {
-                    this.audio.volume = this.volume;
+        // Background music toggle
+        const backgroundMusicToggle = document.getElementById('background-music-toggle');
+        if (backgroundMusicToggle) {
+            backgroundMusicToggle.addEventListener('change', (e) => {
+                this.backgroundMusicEnabled = e.target.checked;
+                this.toggleBackgroundMusic();
+                this.saveData();
+            });
+        }
+
+        // Background volume
+        const backgroundVolumeSlider = document.getElementById('background-volume');
+        if (backgroundVolumeSlider) {
+            backgroundVolumeSlider.addEventListener('input', (e) => {
+                this.backgroundVolume = e.target.value / 100;
+                if (this.backgroundAudio) {
+                    this.backgroundAudio.volume = this.backgroundVolume;
                 }
-                this.updateVolumeDisplay();
                 this.saveData();
             });
         }
 
-        // Test sound button
-        const testSoundBtn = document.getElementById('test-sound-btn');
-        if (testSoundBtn) {
-            testSoundBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Test sound button clicked');
-                this.playSound();
-                testSoundBtn.textContent = 'ध्वनि बजाई गई!';
-                setTimeout(() => {
-                    testSoundBtn.textContent = 'ध्वनि परखें';
-                }, 1000);
+        // Tap volume
+        const tapVolumeSlider = document.getElementById('tap-volume');
+        if (tapVolumeSlider) {
+            tapVolumeSlider.addEventListener('input', (e) => {
+                this.tapVolume = e.target.value / 100;
+                if (this.namAudio) {
+                    this.namAudio.volume = this.tapVolume;
+                }
+                this.saveData();
             });
         }
 
-        // Export data
+        // Data management buttons
         const exportBtn = document.getElementById('export-data-btn');
         if (exportBtn) {
-            exportBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            exportBtn.addEventListener('click', () => {
                 this.exportData();
             });
         }
 
-        // Reset data
         const resetBtn = document.getElementById('reset-data-btn');
         if (resetBtn) {
-            resetBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            resetBtn.addEventListener('click', () => {
                 this.resetData();
             });
         }
     }
 
-    handleTap() {
-        console.log('Tap handled - incrementing counter');
-        this.incrementCounter();
+    toggleBackgroundMusic() {
+        if (!this.backgroundAudio) return;
+
+        if (this.backgroundMusicEnabled) {
+            this.tryPlayBackgroundMusic();
+        } else {
+            this.backgroundAudio.pause();
+        }
     }
 
     incrementCounter() {
         this.currentCount++;
-        console.log(`Counter incremented to: ${this.currentCount}`);
-        
         this.storeTodayCount();
         this.updateDisplay();
         this.updateProgressRing();
         this.updateDailyGoal();
         this.saveData();
         this.checkAchievements();
-        this.playSound();
+        this.playTapSound();
         this.addCountAnimation();
-        this.addHapticFeedback();
-    }
 
-    playSound() {
-        if (!this.soundEnabled) return;
-
-        console.log('Playing sound...');
-        
-        if (this.audio && this.isAudioInitialized) {
-            this.audio.currentTime = 0;
-            this.audio.play().catch(() => {
-                console.log('MP3 playback failed, using Web Audio API');
-                this.playWebAudioSound();
-            });
-        } else {
-            this.playWebAudioSound();
+        // Haptic feedback if supported
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
         }
     }
 
-    playWebAudioSound() {
+    storeTodayCount() {
+        const today = new Date().toDateString();
+        const dailyData = this.getData('dailyData') || {};
+        dailyData[today] = (dailyData[today] || 0) + 1;
+        this.setData('dailyData', dailyData);
+    }
+
+    addCountAnimation() {
+        const countDisplay = document.getElementById('count-display');
+        if (countDisplay) {
+            countDisplay.classList.add('animate');
+            setTimeout(() => {
+                countDisplay.classList.remove('animate');
+            }, 300);
+        }
+    }
+
+    playTapSound() {
+        if (!this.soundEnabled) return;
+        
+        if (this.namAudio) {
+            try {
+                // Reset audio to beginning and play
+                this.namAudio.currentTime = 0;
+                this.namAudio.play().catch(console.error);
+            } catch (e) {
+                console.log('Error playing tap sound:', e);
+            }
+        } else {
+            // Fallback beep sound using Web Audio API
+            this.playBeepSound();
+        }
+    }
+
+    playBeepSound() {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
@@ -344,39 +411,14 @@ class RamNameJapApp {
             gainNode.connect(audioContext.destination);
             
             oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(this.volume * 0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            gainNode.gain.setValueAtTime(this.tapVolume * 0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
             
             oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.3);
-            
-            console.log('Web Audio sound played');
+            oscillator.stop(audioContext.currentTime + 0.1);
         } catch (e) {
-            console.log('Web Audio API not supported:', e);
+            console.log('Web Audio API not supported');
         }
-    }
-
-    addHapticFeedback() {
-        if ('vibrate' in navigator) {
-            navigator.vibrate(50);
-        }
-    }
-
-    addCountAnimation() {
-        const countDisplay = document.getElementById('count-display');
-        if (countDisplay) {
-            countDisplay.classList.add('animate');
-            setTimeout(() => countDisplay.classList.remove('animate'), 400);
-        }
-    }
-
-    storeTodayCount() {
-        const today = new Date().toDateString();
-        const dailyData = this.getData('dailyData') || {};
-        dailyData[today] = (dailyData[today] || 0) + 1;
-        this.setData('dailyData', dailyData);
     }
 
     updateDisplay() {
@@ -414,14 +456,12 @@ class RamNameJapApp {
         const goalFill = document.getElementById('goal-progress-fill');
         
         if (goalText) goalText.textContent = this.dailyGoal.toLocaleString('hi-IN');
-        if (goalPercentage) {
-            goalPercentage.textContent = percentage.toFixed(0) + '%';
-            if (percentage >= 100) {
-                goalPercentage.style.color = 'var(--devotional-gold)';
-                goalPercentage.textContent = 'पूरा! 🎉';
-            }
-        }
+        if (goalPercentage) goalPercentage.textContent = percentage.toFixed(0) + '%';
         if (goalFill) goalFill.style.width = percentage + '%';
+        
+        if (percentage >= 100 && goalPercentage) {
+            goalPercentage.style.color = 'var(--devotional-gold)';
+        }
     }
 
     getTodayCount() {
@@ -431,295 +471,183 @@ class RamNameJapApp {
     }
 
     navigateToScreen(screenName) {
-        console.log(`=== NAVIGATING TO: ${screenName} ===`);
+        // Hide all screens
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+
+        // Show target screen
+        const targetScreen = document.getElementById(`${screenName}-screen`);
+        if (targetScreen) {
+            targetScreen.classList.add('active');
+        }
         
-        if (!screenName) {
-            console.error('Invalid screen name');
-            return;
-        }
-
-        try {
-            // Hide all screens
-            const allScreens = document.querySelectorAll('.screen');
-            allScreens.forEach(screen => {
-                screen.classList.remove('active');
-            });
-
-            // Show target screen
-            const targetScreen = document.getElementById(`${screenName}-screen`);
-            if (targetScreen) {
-                targetScreen.classList.add('active');
-                console.log(`✓ Screen activated: ${screenName}`);
-            } else {
-                console.error(`✗ Screen not found: ${screenName}-screen`);
-                return;
-            }
-            
-            // Update navigation active state
-            const allNavBtns = document.querySelectorAll('.nav-btn');
-            allNavBtns.forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            const activeNavBtns = document.querySelectorAll(`[data-screen="${screenName}"]`);
-            activeNavBtns.forEach(btn => {
-                btn.classList.add('active');
-            });
-            
-            this.currentScreen = screenName;
-            console.log(`✓ Current screen set to: ${this.currentScreen}`);
-            
-            // Initialize specific screen content
-            if (screenName === 'dashboard') {
-                setTimeout(() => {
-                    this.initializeDashboard();
-                }, 300);
-            } else if (screenName === 'settings') {
-                setTimeout(() => {
-                    this.initializeSettings();
-                }, 100);
-            }
-            
-            console.log(`=== NAVIGATION COMPLETE: ${screenName} ===`);
-            
-        } catch (error) {
-            console.error('Navigation error:', error);
-        }
-    }
-
-    initializeDashboard() {
-        console.log('Initializing dashboard...');
-        this.initializeChart();
-        this.renderAchievements();
-        this.calculateStreak();
-    }
-
-    initializeSettings() {
-        console.log('Initializing settings...');
-        const goalInput = document.getElementById('daily-goal-input');
-        const soundToggle = document.getElementById('sound-toggle');
-        const volumeSlider = document.getElementById('volume-slider');
+        // Update navigation active state
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
         
-        if (goalInput) goalInput.value = this.dailyGoal;
-        if (soundToggle) soundToggle.checked = this.soundEnabled;
-        if (volumeSlider) {
-            volumeSlider.value = this.volume;
-            this.updateVolumeDisplay();
-        }
-    }
-
-    updateVolumeDisplay() {
-        const volumeDisplay = document.querySelector('.volume-display');
-        if (volumeDisplay) {
-            volumeDisplay.textContent = Math.round(this.volume * 100) + '%';
+        document.querySelectorAll(`[data-screen="${screenName}"]`).forEach(btn => {
+            btn.classList.add('active');
+        });
+        
+        this.currentScreen = screenName;
+        
+        // Initialize chart if navigating to dashboard
+        if (screenName === 'dashboard') {
+            setTimeout(() => {
+                this.initializeChart();
+                this.renderAchievements();
+            }, 100);
         }
     }
 
     initializeChart() {
         const ctx = document.getElementById('stats-chart');
-        if (!ctx) {
-            console.error('Chart canvas not found');
-            return;
-        }
+        if (!ctx) return;
 
         if (this.chart) {
             this.chart.destroy();
-            this.chart = null;
         }
 
-        try {
-            const chartData = this.getChartData(this.currentPeriod);
-            console.log(`Initializing chart for period: ${this.currentPeriod}`);
-            
-            this.chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: chartData.labels,
-                    datasets: [{
-                        label: 'नाम जप',
-                        data: chartData.data,
-                        backgroundColor: '#1FB8CD',
-                        borderColor: '#FFC185',
-                        borderWidth: 2,
-                        borderRadius: 8,
-                        borderSkipped: false,
-                    }]
+        const chartData = this.getChartData(this.currentPeriod);
+        
+        this.chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'नाम जप',
+                    data: chartData.data,
+                    backgroundColor: '#1FB8CD',
+                    borderColor: '#FFD700',
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(255, 140, 0, 0.1)'
-                            },
-                            ticks: {
-                                color: '#8B4513',
-                                font: {
-                                    family: 'Noto Sans Devanagari'
-                                }
-                            }
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(255, 140, 0, 0.1)'
                         },
-                        x: {
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#8B4513',
-                                font: {
-                                    family: 'Noto Sans Devanagari'
-                                }
+                        ticks: {
+                            color: '#8B4513',
+                            font: {
+                                family: 'Noto Sans Devanagari'
                             }
                         }
                     },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#8B4513',
+                            font: {
+                                family: 'Noto Sans Devanagari'
+                            }
+                        }
                     }
                 }
-            });
-            
-            console.log('Chart initialized successfully');
-        } catch (error) {
-            console.error('Chart initialization error:', error);
-        }
+            }
+        });
     }
 
     getChartData(period) {
         const dailyData = this.getData('dailyData') || {};
         const now = new Date();
+        
         let labels = [];
         let data = [];
         
-        switch (period) {
-            case 'daily':
-                for (let i = 6; i >= 0; i--) {
-                    const date = new Date(now);
-                    date.setDate(date.getDate() - i);
+        if (period === 'daily') {
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toDateString();
+                const dayName = date.toLocaleDateString('hi-IN', { weekday: 'short' });
+                
+                labels.push(dayName);
+                data.push(dailyData[dateStr] || 0);
+            }
+        } else if (period === 'weekly') {
+            for (let i = 3; i >= 0; i--) {
+                const weekStart = new Date(now);
+                weekStart.setDate(weekStart.getDate() - (weekStart.getDay() + 7 * i));
+                
+                let weekTotal = 0;
+                for (let j = 0; j < 7; j++) {
+                    const date = new Date(weekStart);
+                    date.setDate(date.getDate() + j);
                     const dateStr = date.toDateString();
-                    const dayName = date.toLocaleDateString('hi-IN', { weekday: 'short' });
-                    labels.push(dayName);
-                    data.push(dailyData[dateStr] || 0);
+                    weekTotal += dailyData[dateStr] || 0;
                 }
-                break;
                 
-            case 'weekly':
-                for (let i = 3; i >= 0; i--) {
-                    const weekStart = new Date(now);
-                    weekStart.setDate(weekStart.getDate() - (weekStart.getDay() + 7 * i));
-                    let weekTotal = 0;
-                    for (let j = 0; j < 7; j++) {
-                        const date = new Date(weekStart);
-                        date.setDate(date.getDate() + j);
-                        const dateStr = date.toDateString();
-                        weekTotal += dailyData[dateStr] || 0;
-                    }
-                    labels.push(`सप्ताह ${4-i}`);
-                    data.push(weekTotal);
+                labels.push(`सप्ताह ${4-i}`);
+                data.push(weekTotal);
+            }
+        } else if (period === 'monthly') {
+            for (let i = 5; i >= 0; i--) {
+                const month = new Date(now);
+                month.setMonth(month.getMonth() - i);
+                const monthName = month.toLocaleDateString('hi-IN', { month: 'short' });
+                
+                let monthTotal = 0;
+                const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(month.getFullYear(), month.getMonth(), day);
+                    const dateStr = date.toDateString();
+                    monthTotal += dailyData[dateStr] || 0;
                 }
-                break;
                 
-            case 'monthly':
-                for (let i = 5; i >= 0; i--) {
-                    const month = new Date(now);
-                    month.setMonth(month.getMonth() - i);
-                    const monthName = month.toLocaleDateString('hi-IN', { month: 'short' });
-                    let monthTotal = 0;
-                    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+                labels.push(monthName);
+                data.push(monthTotal);
+            }
+        } else if (period === 'yearly') {
+            for (let i = 2; i >= 0; i--) {
+                const year = now.getFullYear() - i;
+                let yearTotal = 0;
+                
+                for (let month = 0; month < 12; month++) {
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
                     for (let day = 1; day <= daysInMonth; day++) {
-                        const date = new Date(month.getFullYear(), month.getMonth(), day);
+                        const date = new Date(year, month, day);
                         const dateStr = date.toDateString();
-                        monthTotal += dailyData[dateStr] || 0;
+                        yearTotal += dailyData[dateStr] || 0;
                     }
-                    labels.push(monthName);
-                    data.push(monthTotal);
                 }
-                break;
                 
-            case 'yearly':
-                for (let i = 2; i >= 0; i--) {
-                    const year = now.getFullYear() - i;
-                    let yearTotal = 0;
-                    for (let month = 0; month < 12; month++) {
-                        const daysInMonth = new Date(year, month + 1, 0).getDate();
-                        for (let day = 1; day <= daysInMonth; day++) {
-                            const date = new Date(year, month, day);
-                            const dateStr = date.toDateString();
-                            yearTotal += dailyData[dateStr] || 0;
-                        }
-                    }
-                    labels.push(year.toString());
-                    data.push(yearTotal);
-                }
-                break;
-                
-            case 'lifetime':
-                const allDates = Object.keys(dailyData);
-                const monthlyTotals = {};
-                allDates.forEach(dateStr => {
-                    const date = new Date(dateStr);
-                    const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
-                    monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + (dailyData[dateStr] || 0);
-                });
-                const sortedMonths = Object.keys(monthlyTotals).sort();
-                sortedMonths.slice(-12).forEach(monthKey => {
-                    const [year, month] = monthKey.split('-');
-                    const date = new Date(year, month);
-                    const monthName = date.toLocaleDateString('hi-IN', { month: 'short', year: '2-digit' });
-                    labels.push(monthName);
-                    data.push(monthlyTotals[monthKey]);
-                });
-                break;
+                labels.push(year.toString());
+                data.push(yearTotal);
+            }
         }
         
         return { labels, data };
     }
 
     switchChartPeriod(period) {
-        console.log(`Switching chart to period: ${period}`);
         this.currentPeriod = period;
         
         document.querySelectorAll('.chart-tab').forEach(tab => {
             tab.classList.remove('active');
         });
-        
         const targetTab = document.querySelector(`[data-period="${period}"]`);
         if (targetTab) {
             targetTab.classList.add('active');
         }
         
-        setTimeout(() => {
-            this.initializeChart();
-        }, 100);
-    }
-
-    calculateStreak() {
-        const dailyData = this.getData('dailyData') || {};
-        const today = new Date();
-        let streak = 0;
-        
-        for (let i = 0; i < 365; i++) {
-            const checkDate = new Date(today);
-            checkDate.setDate(checkDate.getDate() - i);
-            const dateStr = checkDate.toDateString();
-            
-            if (dailyData[dateStr] && dailyData[dateStr] > 0) {
-                streak++;
-            } else if (i > 0) {
-                break;
-            }
-        }
-        
-        const streakDisplay = document.getElementById('current-streak');
-        if (streakDisplay) {
-            streakDisplay.textContent = streak.toLocaleString('hi-IN');
-        }
+        this.initializeChart();
     }
 
     checkAchievements() {
@@ -753,35 +681,9 @@ class RamNameJapApp {
             
             modal.classList.remove('hidden');
             
-            this.playAchievementSound();
-            
             setTimeout(() => {
                 this.hideAchievementModal();
-            }, 5000);
-        }
-    }
-
-    playAchievementSound() {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            [800, 1000, 1200].forEach((freq, index) => {
-                setTimeout(() => {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                    gainNode.gain.setValueAtTime(this.volume * 0.2, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start();
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                }, index * 200);
-            });
-        } catch (e) {
-            console.log('Achievement sound failed:', e);
+            }, 3000);
         }
     }
 
@@ -826,13 +728,12 @@ class RamNameJapApp {
                 const originalText = btn.textContent;
                 btn.textContent = 'सेव हो गया! ✓';
                 btn.style.background = '#28a745';
+                
                 setTimeout(() => {
                     btn.textContent = originalText;
                     btn.style.background = '';
                 }, 2000);
             }
-        } else {
-            alert('कृपया एक वैध संख्या दर्ज करें (1 से अधिक)');
         }
     }
 
@@ -843,7 +744,9 @@ class RamNameJapApp {
             dailyData: this.getData('dailyData') || {},
             achievements: this.getData('achievements') || [],
             soundEnabled: this.soundEnabled,
-            volume: this.volume,
+            backgroundMusicEnabled: this.backgroundMusicEnabled,
+            backgroundVolume: this.backgroundVolume,
+            tapVolume: this.tapVolume,
             exportDate: new Date().toISOString()
         };
         
@@ -853,15 +756,14 @@ class RamNameJapApp {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(dataBlob);
         link.download = `ram-naam-jap-data-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
         
         const btn = document.getElementById('export-data-btn');
         if (btn) {
             const originalText = btn.textContent;
             btn.textContent = 'एक्सपोर्ट हो गया! ✓';
             btn.style.background = '#28a745';
+            
             setTimeout(() => {
                 btn.textContent = originalText;
                 btn.style.background = '';
@@ -870,64 +772,73 @@ class RamNameJapApp {
     }
 
     resetData() {
-        const confirmation = confirm('क्या आप वाकई सभी डेटा रीसेट करना चाहते हैं?\n\nयह कार्य पूर्ववत नहीं हो सकता।');
-        
-        if (confirmation) {
-            try {
-                const keys = ['currentCount', 'dailyGoal', 'dailyData', 'achievements', 'soundEnabled', 'volume'];
-                keys.forEach(key => localStorage.removeItem(`ramNameJap_${key}`));
-                
-                this.currentCount = 0;
-                this.dailyGoal = 2400;
-                this.soundEnabled = true;
-                this.volume = 0.7;
-                
-                this.initializeSettings();
-                this.updateDisplay();
-                this.updateProgressRing();
-                this.updateDailyGoal();
-                this.renderAchievements();
-                this.calculateStreak();
-                
-                if (this.chart) {
-                    this.chart.destroy();
-                    this.initializeChart();
+        if (confirm('क्या आप वाकई सभी डेटा रीसेट करना चाहते हैं? यह कार्य पूर्ववत नहीं हो सकता।')) {
+            // Clear all stored data
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('ramNameJap_')) {
+                    localStorage.removeItem(key);
                 }
-                
-                alert('सभी डेटा रीसेट हो गया है।');
-                this.navigateToScreen('home');
-                
-            } catch (error) {
-                console.error('Reset error:', error);
-                alert('डेटा रीसेट करने में त्रुटि हुई।');
-            }
-        }
-    }
-
-    saveData() {
-        try {
-            this.setData('currentCount', this.currentCount);
-            this.setData('dailyGoal', this.dailyGoal);
-            this.setData('soundEnabled', this.soundEnabled);
-            this.setData('volume', this.volume);
-        } catch (error) {
-            console.error('Save error:', error);
-        }
-    }
-
-    loadData() {
-        try {
-            this.currentCount = this.getData('currentCount') || 0;
-            this.dailyGoal = this.getData('dailyGoal') || 2400;
-            this.soundEnabled = this.getData('soundEnabled') !== false;
-            this.volume = this.getData('volume') || 0.7;
-        } catch (error) {
-            console.error('Load error:', error);
+            });
+            
+            // Reset app state
             this.currentCount = 0;
             this.dailyGoal = 2400;
             this.soundEnabled = true;
-            this.volume = 0.7;
+            this.backgroundMusicEnabled = true;
+            this.backgroundVolume = 0.3;
+            this.tapVolume = 0.7;
+            
+            // Reset UI elements
+            this.updateFormElements();
+            this.updateDisplay();
+            this.updateProgressRing();
+            this.updateDailyGoal();
+            this.renderAchievements();
+            
+            if (this.chart) {
+                this.chart.destroy();
+                this.initializeChart();
+            }
+            
+            alert('सभी डेटा रीसेट हो गया है।');
         }
+    }
+
+    updateFormElements() {
+        const goalInput = document.getElementById('daily-goal-input');
+        const soundToggle = document.getElementById('sound-toggle');
+        const backgroundMusicToggle = document.getElementById('background-music-toggle');
+        const backgroundVolumeSlider = document.getElementById('background-volume');
+        const tapVolumeSlider = document.getElementById('tap-volume');
+        
+        if (goalInput) goalInput.value = this.dailyGoal;
+        if (soundToggle) soundToggle.checked = this.soundEnabled;
+        if (backgroundMusicToggle) backgroundMusicToggle.checked = this.backgroundMusicEnabled;
+        if (backgroundVolumeSlider) backgroundVolumeSlider.value = this.backgroundVolume * 100;
+        if (tapVolumeSlider) tapVolumeSlider.value = this.tapVolume * 100;
+    }
+
+    saveData() {
+        this.setData('currentCount', this.currentCount);
+        this.setData('dailyGoal', this.dailyGoal);
+        this.setData('soundEnabled', this.soundEnabled);
+        this.setData('backgroundMusicEnabled', this.backgroundMusicEnabled);
+        this.setData('backgroundVolume', this.backgroundVolume);
+        this.setData('tapVolume', this.tapVolume);
+    }
+
+    loadData() {
+        this.currentCount = this.getData('currentCount') || 0;
+        this.dailyGoal = this.getData('dailyGoal') || 2400;
+        this.soundEnabled = this.getData('soundEnabled') !== false;
+        this.backgroundMusicEnabled = this.getData('backgroundMusicEnabled') !== false;
+        this.backgroundVolume = this.getData('backgroundVolume') || 0.3;
+        this.tapVolume = this.getData('tapVolume') || 0.7;
+        
+        // Update form elements
+        setTimeout(() => {
+            this.updateFormElements();
+        }, 100);
     }
 
     getData(key) {
@@ -935,7 +846,7 @@ class RamNameJapApp {
             const value = localStorage.getItem(`ramNameJap_${key}`);
             return value ? JSON.parse(value) : null;
         } catch (e) {
-            console.error(`Error loading data for key ${key}:`, e);
+            console.error('Error loading data:', e);
             return null;
         }
     }
@@ -944,32 +855,17 @@ class RamNameJapApp {
         try {
             localStorage.setItem(`ramNameJap_${key}`, JSON.stringify(value));
         } catch (e) {
-            console.error(`Error saving data for key ${key}:`, e);
+            console.error('Error saving data:', e);
         }
     }
 }
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing app...');
     window.ramApp = new RamNameJapApp();
 });
 
-// Save data when page becomes hidden
-document.addEventListener('visibilitychange', () => {
-    if (window.ramApp && document.visibilityState === 'hidden') {
-        window.ramApp.saveData();
-    }
-});
-
-// Save data before page unload
-window.addEventListener('beforeunload', () => {
-    if (window.ramApp) {
-        window.ramApp.saveData();
-    }
-});
-
-// Service Worker registration
+// Service Worker registration for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
