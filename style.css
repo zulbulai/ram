@@ -738,40 +738,6 @@ select.form-control {
 }
 
 /* END PERPLEXITY DESIGN SYSTEM */
-/* Background Image */
-.background-image {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, rgba(255, 140, 0, 0.1) 0%, rgba(220, 20, 60, 0.1) 25%, rgba(255, 215, 0, 0.1) 50%, rgba(255, 140, 0, 0.1) 75%, rgba(220, 20, 60, 0.1) 100%),
-                url('background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    opacity: 0.6;
-    z-index: -1;
-}
-
-/* Fallback background when image doesn't load */
-.background-image::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(255, 140, 0, 0.1) 0%, 
-        rgba(220, 20, 60, 0.1) 25%, 
-        rgba(255, 215, 0, 0.1) 50%, 
-        rgba(255, 140, 0, 0.1) 75%, 
-        rgba(220, 20, 60, 0.1) 100%);
-    z-index: -1;
-}
-
 /* Devotional Color Palette */
 :root {
   --devotional-gold: #FFD700;
@@ -796,13 +762,12 @@ select.form-control {
 
 body {
   font-family: 'Noto Sans Devanagari', 'Poppins', sans-serif;
-  background: rgba(255, 248, 220, 0.9);
+  background: linear-gradient(135deg, var(--devotional-cream) 0%, var(--devotional-light-cream) 100%);
   color: var(--devotional-dark-brown);
   min-height: 100vh;
   overflow-x: hidden;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  position: relative;
 }
 
 /* Loading Screen */
@@ -864,7 +829,6 @@ body {
   background: linear-gradient(135deg, var(--devotional-orange) 0%, var(--devotional-gold) 100%);
   box-shadow: 0 4px 20px var(--devotional-shadow);
   position: relative;
-  z-index: 100;
 }
 
 .header::after {
@@ -878,14 +842,13 @@ body {
 }
 
 .ram-title {
-  font-size: 56px;
+  font-size: 48px;
   font-weight: 700;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   margin: 0;
   font-family: 'Noto Sans Devanagari', serif;
-  letter-spacing: 3px;
-  text-align: center;
+  letter-spacing: 2px;
 }
 
 .screen-title {
@@ -897,7 +860,7 @@ body {
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
-/* Main Counter Area - Mobile Optimized */
+/* Main Counter Area */
 .main-counter {
   flex: 1;
   display: flex;
@@ -908,27 +871,26 @@ body {
   cursor: pointer;
   position: relative;
   min-height: calc(100vh - 200px);
-  touch-action: manipulation;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
 }
 
-/* Center Circle with Progress Ring - Mobile Optimized */
+/* Center Circle with Progress Ring - Fixed Positioning */
 .center-circle-container {
   position: relative;
   margin-bottom: 30px;
-  touch-action: manipulation;
-}
-
-.progress-ring-container {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.progress-ring-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 }
 
 .progress-ring {
@@ -943,7 +905,7 @@ body {
 .progress-ring-circle {
   stroke: var(--devotional-orange);
   stroke-linecap: round;
-  stroke-dasharray: 816.8;
+  stroke-dasharray: 816.8; /* 2 * PI * 130 */
   stroke-dashoffset: 816.8;
   transition: stroke-dashoffset 0.3s ease;
   filter: drop-shadow(0 0 5px var(--devotional-orange));
@@ -965,7 +927,6 @@ body {
     0 0 30px var(--devotional-shadow),
     inset 0 0 30px rgba(255, 255, 255, 0.3);
   border: 4px solid var(--devotional-gold);
-  touch-action: manipulation;
 }
 
 .ram-image {
@@ -975,6 +936,7 @@ body {
   overflow: hidden;
   border: 3px solid white;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
 }
 
 .ram-image img {
@@ -982,18 +944,36 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  pointer-events: none;
 }
 
-/* Counter Display - Mobile Optimized */
+/* Animation for ram.png on tap */
+.ram-image.animate {
+  animation: ramTapAnimation 0.6s ease-out;
+}
+
+@keyframes ramTapAnimation {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Counter Display */
 .counter-display {
   text-align: center;
   margin-bottom: 30px;
-  touch-action: manipulation;
+  position: relative;
+  z-index: 5;
+  margin-top: 180px; /* Space for fixed progress ring */
 }
 
 .count-label {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--devotional-brown);
   margin-bottom: 10px;
@@ -1001,13 +981,12 @@ body {
 }
 
 .count-number {
-  font-size: 72px;
+  font-size: 64px;
   font-weight: 700;
   color: var(--devotional-orange);
   text-shadow: 2px 2px 4px var(--devotional-shadow);
   font-family: 'Noto Sans Devanagari', monospace;
   transition: all 0.3s ease;
-  line-height: 1.2;
 }
 
 .count-number.animate {
@@ -1015,12 +994,13 @@ body {
   color: var(--devotional-red);
 }
 
-/* Daily Goal Section - Mobile Optimized */
+/* Daily Goal Section */
 .daily-goal-section {
   width: 100%;
-  max-width: 320px;
+  max-width: 300px;
   text-align: center;
-  touch-action: manipulation;
+  position: relative;
+  z-index: 5;
 }
 
 .goal-text {
@@ -1028,7 +1008,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--devotional-brown);
   font-family: 'Noto Sans Devanagari', sans-serif;
@@ -1041,7 +1021,7 @@ body {
 
 .goal-progress-bar {
   width: 100%;
-  height: 12px;
+  height: 8px;
   background: rgba(255, 140, 0, 0.2);
   border-radius: 10px;
   overflow: hidden;
@@ -1057,7 +1037,7 @@ body {
   box-shadow: 0 0 10px var(--devotional-shadow);
 }
 
-/* Bottom Navigation - Mobile Optimized */
+/* Bottom Navigation - Updated for 5 buttons */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -1071,7 +1051,7 @@ body {
   box-shadow: 0 -4px 20px var(--devotional-shadow);
   border-top: 2px solid var(--devotional-gold);
   z-index: 1000;
-  touch-action: manipulation;
+  padding: 0 10px;
 }
 
 .nav-btn {
@@ -1084,12 +1064,11 @@ body {
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 8px 12px;
+  padding: 8px 6px;
   border-radius: 10px;
-  min-width: 60px;
-  min-height: 60px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  min-width: 50px;
+  flex: 1;
+  max-width: 70px;
 }
 
 .nav-btn:hover, .nav-btn.active {
@@ -1097,19 +1076,17 @@ body {
   transform: translateY(-2px);
 }
 
-.nav-btn:active {
-  transform: translateY(0);
-}
-
 .nav-icon {
-  font-size: 28px;
+  font-size: 20px;
   margin-bottom: 4px;
 }
 
 .nav-label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   font-family: 'Noto Sans Devanagari', sans-serif;
+  text-align: center;
+  line-height: 1.2;
 }
 
 /* Dashboard Styles */
@@ -1122,7 +1099,7 @@ body {
 }
 
 .stats-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 20px;
   padding: 30px 20px;
   text-align: center;
@@ -1136,23 +1113,23 @@ body {
 }
 
 .lifetime-stats h3 {
-  font-size: 20px;
+  font-size: 18px;
   margin-bottom: 10px;
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
 .lifetime-number {
-  font-size: 52px;
+  font-size: 48px;
   font-weight: 700;
   margin-bottom: 5px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   font-family: 'Noto Sans Devanagari', monospace;
 }
 
-/* Chart Tabs - Mobile Optimized */
+/* Chart Tabs */
 .chart-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 15px;
   padding: 5px;
   box-shadow: 0 4px 15px rgba(255, 140, 0, 0.1);
@@ -1161,17 +1138,16 @@ body {
 
 .chart-tab {
   flex: 1;
-  padding: 15px 8px;
+  padding: 12px 8px;
   background: none;
   border: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--devotional-brown);
   cursor: pointer;
   transition: all 0.3s ease;
   border-radius: 10px;
   font-family: 'Noto Sans Devanagari', sans-serif;
-  touch-action: manipulation;
 }
 
 .chart-tab.active {
@@ -1182,7 +1158,7 @@ body {
 
 /* Chart Container */
 .chart-container {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 20px;
   padding: 20px;
   box-shadow: 0 8px 25px rgba(255, 140, 0, 0.15);
@@ -1191,7 +1167,7 @@ body {
 
 /* Achievements */
 .achievements-section h3 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--devotional-brown);
   margin-bottom: 15px;
@@ -1206,7 +1182,7 @@ body {
 }
 
 .achievement-badge {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 15px;
   padding: 15px 10px;
   text-align: center;
@@ -1223,12 +1199,12 @@ body {
 }
 
 .achievement-icon {
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 8px;
 }
 
 .achievement-count {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   font-family: 'Noto Sans Devanagari', monospace;
 }
@@ -1243,7 +1219,7 @@ body {
 }
 
 .resource-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 20px;
   padding: 25px;
   box-shadow: 0 8px 25px rgba(255, 140, 0, 0.15);
@@ -1257,7 +1233,7 @@ body {
 }
 
 .resource-card h3 {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--devotional-brown);
   margin-bottom: 10px;
@@ -1265,7 +1241,7 @@ body {
 }
 
 .resource-card p {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--devotional-brown);
   margin-bottom: 20px;
   opacity: 0.8;
@@ -1282,7 +1258,7 @@ body {
 }
 
 .settings-section {
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   border-radius: 20px;
   padding: 25px;
   box-shadow: 0 8px 25px rgba(255, 140, 0, 0.15);
@@ -1290,11 +1266,21 @@ body {
 }
 
 .settings-section h3 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--devotional-brown);
   margin-bottom: 20px;
   font-family: 'Noto Sans Devanagari', sans-serif;
+}
+
+.settings-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--devotional-brown);
+  margin-bottom: 15px;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  border-bottom: 2px solid var(--devotional-light-shadow);
+  padding-bottom: 8px;
 }
 
 .setting-item {
@@ -1303,11 +1289,124 @@ body {
 
 .setting-item label {
   display: block;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--devotional-brown);
   margin-bottom: 8px;
   font-family: 'Noto Sans Devanagari', sans-serif;
+}
+
+/* Advanced Volume Control Styles */
+.volume-control-group {
+  margin-bottom: 25px;
+  padding: 20px;
+  background: var(--devotional-light-cream);
+  border-radius: 15px;
+  border: 1px solid var(--devotional-light-shadow);
+}
+
+.volume-control {
+  margin-bottom: 15px;
+}
+
+.volume-switch {
+  display: flex !important;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px !important;
+  margin-bottom: 0 !important;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+}
+
+.volume-switch input {
+  display: none;
+}
+
+.volume-switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+  background-color: #ccc;
+  border-radius: 24px;
+  margin-right: 12px;
+  transition: 0.3s;
+}
+
+.volume-switch-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.volume-switch input:checked + .volume-switch-slider {
+  background-color: var(--devotional-orange);
+}
+
+.volume-switch input:checked + .volume-switch-slider::before {
+  transform: translateX(26px);
+}
+
+.volume-slider-container {
+  margin-top: 15px;
+}
+
+.volume-slider-container label {
+  font-size: 13px;
+  color: var(--devotional-brown);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.volume-slider {
+  flex: 1;
+  height: 6px;
+  border-radius: 5px;
+  background: #ddd;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--devotional-orange);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--devotional-orange);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.volume-value {
+  min-width: 35px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--devotional-brown);
+  font-family: 'Noto Sans Devanagari', monospace;
 }
 
 .checkbox-label {
@@ -1316,26 +1415,25 @@ body {
   cursor: pointer;
   font-size: 16px !important;
   margin-bottom: 0 !important;
-  touch-action: manipulation;
 }
 
 .checkbox-label input {
   margin-right: 12px;
-  transform: scale(1.5);
+  transform: scale(1.2);
 }
 
 .app-info p {
-  font-size: 16px;
+  font-size: 14px;
   color: var(--devotional-brown);
   margin-bottom: 8px;
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
-/* Button Styles - Mobile Optimized */
+/* Button Styles */
 .btn {
-  padding: 15px 24px;
+  padding: 12px 24px;
   border-radius: 15px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1344,9 +1442,6 @@ body {
   display: inline-block;
   text-align: center;
   font-family: 'Noto Sans Devanagari', sans-serif;
-  touch-action: manipulation;
-  min-height: 48px;
-  min-width: 48px;
 }
 
 .btn--primary {
@@ -1358,10 +1453,6 @@ body {
 .btn--primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px var(--devotional-shadow);
-}
-
-.btn--primary:active {
-  transform: translateY(0);
 }
 
 .btn--secondary {
@@ -1386,57 +1477,23 @@ body {
   color: white;
 }
 
-/* Form Controls - Mobile Optimized */
+/* Form Controls */
 .form-control {
   width: 100%;
-  padding: 15px 16px;
+  padding: 12px 16px;
   border: 2px solid var(--devotional-light-shadow);
   border-radius: 10px;
   font-size: 16px;
   font-family: 'Noto Sans Devanagari', sans-serif;
   color: var(--devotional-brown);
-  background: rgba(255, 255, 255, 0.95);
+  background: white;
   transition: all 0.3s ease;
-  min-height: 48px;
 }
 
 .form-control:focus {
   outline: none;
   border-color: var(--devotional-orange);
   box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2);
-}
-
-/* Range Slider Styles */
-input[type="range"] {
-  -webkit-appearance: none;
-  width: 100%;
-  height: 8px;
-  border-radius: 5px;
-  background: rgba(255, 140, 0, 0.2);
-  outline: none;
-  padding: 0;
-  margin: 10px 0;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--devotional-orange);
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(255, 140, 0, 0.5);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--devotional-orange);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 6px rgba(255, 140, 0, 0.5);
 }
 
 /* Modal Styles */
@@ -1462,11 +1519,11 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .modal-content {
-  background: rgba(255, 255, 255, 0.98);
+  background: white;
   border-radius: 20px;
   padding: 40px 30px;
   text-align: center;
-  max-width: 320px;
+  max-width: 300px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   transform: scale(1);
@@ -1490,7 +1547,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .modal-content h3 {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 600;
   color: var(--devotional-brown);
   margin-bottom: 15px;
@@ -1498,125 +1555,50 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .modal-content p {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--devotional-brown);
   margin-bottom: 25px;
   opacity: 0.8;
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
-/* Mobile Responsive Design */
+/* Responsive Design */
 @media (max-width: 768px) {
   .ram-title {
-    font-size: 48px;
-    letter-spacing: 2px;
+    font-size: 36px;
   }
   
   .center-circle {
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
   }
   
   .ram-image {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
   }
   
   .progress-ring {
-    width: 280px;
-    height: 280px;
+    width: 250px;
+    height: 250px;
   }
   
   .count-number {
-    font-size: 60px;
+    font-size: 48px;
   }
   
   .lifetime-number {
-    font-size: 42px;
+    font-size: 36px;
   }
   
-  .main-counter {
-    padding: 30px 15px;
-  }
-  
-  .goal-text {
-    font-size: 16px;
+  .counter-display {
+    margin-top: 150px;
   }
 }
 
 @media (max-width: 480px) {
-  .ram-title {
-    font-size: 42px;
-    letter-spacing: 1px;
-  }
-  
   .main-counter {
-    padding: 20px 10px;
-  }
-  
-  .center-circle {
-    width: 170px;
-    height: 170px;
-  }
-  
-  .ram-image {
-    width: 130px;
-    height: 130px;
-  }
-  
-  .progress-ring {
-    width: 240px;
-    height: 240px;
-  }
-  
-  .count-number {
-    font-size: 50px;
-  }
-  
-  .count-label {
-    font-size: 16px;
-  }
-  
-  .achievements-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .nav-icon {
-    font-size: 24px;
-  }
-  
-  .nav-label {
-    font-size: 11px;
-  }
-  
-  .lifetime-number {
-    font-size: 36px;
-  }
-  
-  .goal-text {
-    font-size: 14px;
-  }
-  
-  .daily-goal-section {
-    max-width: 280px;
-  }
-  
-  .settings-content,
-  .resources-content,
-  .dashboard-content {
-    padding: 15px;
-  }
-  
-  .chart-tab {
-    padding: 12px 6px;
-    font-size: 12px;
-  }
-}
-
-/* Extra small devices */
-@media (max-width: 360px) {
-  .ram-title {
-    font-size: 36px;
+    padding: 20px 15px;
   }
   
   .center-circle {
@@ -1635,25 +1617,27 @@ input[type="range"]::-moz-range-thumb {
   }
   
   .count-number {
-    font-size: 42px;
+    font-size: 40px;
+  }
+  
+  .achievements-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
   
   .nav-icon {
-    font-size: 20px;
+    font-size: 18px;
   }
   
   .nav-label {
-    font-size: 10px;
+    font-size: 9px;
   }
   
-  .bottom-nav {
-    height: 75px;
+  .counter-display {
+    margin-top: 120px;
   }
   
-  .nav-btn {
-    min-height: 55px;
-    min-width: 55px;
-    padding: 6px 8px;
+  .volume-control-group {
+    padding: 15px;
   }
 }
 
@@ -1675,37 +1659,4 @@ input[type="range"]::-moz-range-thumb {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
-}
-
-/* Touch Feedback */
-.main-counter:active .center-circle {
-  transform: translate(-50%, -50%) scale(0.98);
-}
-
-.counter-display:active {
-  transform: scale(0.98);
-}
-
-.daily-goal-section:active {
-  transform: scale(0.98);
-}
-
-/* Prevent text selection on tap areas */
-.main-counter,
-.center-circle-container,
-.counter-display,
-.daily-goal-section {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-
-/* Optimize for high DPI screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .ram-image img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
 }

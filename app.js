@@ -1,4 +1,4 @@
-// Ram Naam Jap Counter App - Mobile Optimized with Dual Audio
+// Ram Naam Jap Counter App - Version 2.0
 class RamNameJapApp {
     constructor() {
         this.currentCount = 0;
@@ -7,152 +7,159 @@ class RamNameJapApp {
         this.chart = null;
         this.currentPeriod = 'daily';
         this.soundEnabled = true;
-        this.backgroundMusicEnabled = true;
-        this.backgroundVolume = 0.3;
-        this.tapVolume = 0.7;
         this.achievements = [100, 500, 1000, 2400, 5000, 10000, 25000, 50000, 100000];
-        this.audioInitialized = false;
         
-        // Audio elements
-        this.backgroundAudio = null;
-        this.namAudio = null;
+        // Advanced volume controls
+        this.tapSoundEnabled = true;
+        this.tapVolume = 50;
+        this.bgSoundEnabled = false;
+        this.bgVolume = 30;
+        this.bgAudio = null;
         
         this.initializeApp();
     }
 
     initializeApp() {
         this.loadData();
-        this.initializeAudio();
         this.setupEventListeners();
         this.updateDisplay();
         this.hideLoadingScreen();
         this.updateProgressRing();
         this.updateDailyGoal();
         this.renderAchievements();
-        
-        // Try to start background music immediately and set up fallbacks
-        setTimeout(() => {
-            this.startBackgroundMusic();
-        }, 500);
-    }
-
-    initializeAudio() {
-        // Initialize background audio
-        this.backgroundAudio = document.getElementById('background-audio');
-        if (this.backgroundAudio) {
-            this.backgroundAudio.volume = this.backgroundVolume;
-            this.backgroundAudio.loop = true;
-            this.backgroundAudio.preload = 'auto';
-            
-            // Add event listeners for audio
-            this.backgroundAudio.addEventListener('canplaythrough', () => {
-                console.log('Background audio can play through');
-                if (this.backgroundMusicEnabled) {
-                    this.tryPlayBackgroundMusic();
-                }
-            });
-            
-            this.backgroundAudio.addEventListener('loadeddata', () => {
-                console.log('Background audio loaded');
-                if (this.backgroundMusicEnabled) {
-                    this.tryPlayBackgroundMusic();
-                }
-            });
-        }
-
-        // Initialize tap audio
-        this.namAudio = document.getElementById('nam-audio');
-        if (this.namAudio) {
-            this.namAudio.volume = this.tapVolume;
-            this.namAudio.preload = 'auto';
-        }
-        
-        this.audioInitialized = true;
-    }
-
-    tryPlayBackgroundMusic() {
-        if (!this.backgroundAudio || !this.backgroundMusicEnabled) return;
-        
-        const playPromise = this.backgroundAudio.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('Background music started successfully');
-            }).catch(error => {
-                console.log('Background music autoplay prevented:', error);
-                // Don't set up fallback here, it's handled in startBackgroundMusic
-            });
-        }
-    }
-
-    startBackgroundMusic() {
-        if (!this.backgroundMusicEnabled || !this.backgroundAudio) return;
-
-        // Multiple attempts to play background music
-        this.tryPlayBackgroundMusic();
-        
-        // Set up autoplay fallback for first user interaction
-        this.setupAutoplayFallback();
-        
-        // Try again after a short delay
-        setTimeout(() => {
-            if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
-                this.tryPlayBackgroundMusic();
-            }
-        }, 1000);
-    }
-
-    setupAutoplayFallback() {
-        let musicStarted = false;
-        
-        const startMusic = () => {
-            if (musicStarted || !this.backgroundMusicEnabled || !this.backgroundAudio) return;
-            
-            this.backgroundAudio.play().then(() => {
-                musicStarted = true;
-                console.log('Background music started via user interaction');
-            }).catch(console.error);
-        };
-
-        // Add multiple event listeners to catch first interaction
-        const events = ['touchstart', 'touchend', 'click', 'keydown'];
-        events.forEach(eventType => {
-            document.addEventListener(eventType, startMusic, { once: true, passive: true });
-        });
-        
-        // Clean up after 10 seconds
-        setTimeout(() => {
-            events.forEach(eventType => {
-                document.removeEventListener(eventType, startMusic);
-            });
-        }, 10000);
+        this.initializeVolumeControls();
+        this.initializeBackgroundAudio();
     }
 
     hideLoadingScreen() {
         setTimeout(() => {
             const loadingScreen = document.getElementById('loading-screen');
-            loadingScreen.classList.add('hidden');
-            
-            // Try to start music again after loading screen disappears
-            setTimeout(() => {
-                if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
-                    this.tryPlayBackgroundMusic();
-                }
-            }, 100);
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+            }
         }, 1500);
     }
 
     setupEventListeners() {
-        // Set up navigation first
+        // Set up navigation
         this.setupNavigation();
         
-        // Set up tap areas for counter (everywhere except header and footer)
-        this.setupTapAreas();
+        // Set up counter functionality for home screen
+        this.setupCounterArea();
         
         // Set up other interactive elements
         this.setupOtherEventListeners();
+        
+        // Set up volume controls
+        this.setupVolumeEventListeners();
+    }
 
-        // Prevent context menu
+    setupNavigation() {
+        // Get all navigation buttons
+        const navButtons = document.querySelectorAll('.nav-btn[data-screen]');
+        const shareButtons = document.querySelectorAll('#share-btn');
+        
+        // Handle regular navigation buttons
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const screen = btn.getAttribute('data-screen');
+                this.navigateToScreen(screen);
+            });
+        });
+
+        // Handle share buttons
+        shareButtons.forEach(shareBtn => {
+            shareBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.shareOnWhatsApp();
+            });
+        });
+    }
+
+    shareOnWhatsApp() {
+        const todayCount = this.getTodayCount();
+        const totalCount = this.currentCount;
+        const goalProgress = Math.min((todayCount / this.dailyGoal) * 100, 100).toFixed(0);
+        
+        const message = `🙏 राम नाम जप काउंटर 🙏\n\n` +
+                       `आज का काउंट: ${todayCount.toLocaleString('hi-IN')}\n` +
+                       `कुल काउंट: ${totalCount.toLocaleString('hi-IN')}\n` +
+                       `दैनिक लक्ष्य: ${goalProgress}% पूरा\n\n` +
+                       `राम नाम सत्य है! 🚩\n\n` +
+                       `#रामनामजप #राम #भक्ति`;
+        
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    setupCounterArea() {
+        // Only set up counter on home screen
+        const counterAreas = [
+            '.center-circle-container',
+            '.counter-display', 
+            '.daily-goal-section',
+            '.main-counter'
+        ];
+        
+        counterAreas.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.addEventListener('click', (e) => {
+                    // Only increment if we're on home screen and not clicking on navigation or buttons
+                    if (this.currentScreen === 'home' && 
+                        !e.target.closest('.bottom-nav') && 
+                        !e.target.closest('.btn')) {
+                        e.stopPropagation();
+                        this.incrementCounter();
+                    }
+                });
+            }
+        });
+    }
+
+    setupOtherEventListeners() {
+        // Chart tabs
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('chart-tab')) {
+                e.stopPropagation();
+                e.preventDefault();
+                const period = e.target.getAttribute('data-period');
+                this.switchChartPeriod(period);
+            }
+        });
+
+        // Settings event listeners
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'save-goal-btn') {
+                e.stopPropagation();
+                e.preventDefault();
+                this.saveDailyGoal();
+            }
+            
+            if (e.target.id === 'export-data-btn') {
+                e.stopPropagation();
+                e.preventDefault();
+                this.exportData();
+            }
+            
+            if (e.target.id === 'reset-data-btn') {
+                e.stopPropagation();
+                e.preventDefault();
+                this.resetData();
+            }
+            
+            if (e.target.id === 'close-achievement') {
+                e.stopPropagation();
+                e.preventDefault();
+                this.hideAchievementModal();
+            }
+        });
+
+        // Prevent context menu on long press
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
@@ -164,189 +171,103 @@ class RamNameJapApp {
                 this.incrementCounter();
             }
         });
+    }
 
-        // Page visibility change - pause/resume background music
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                if (this.backgroundAudio && !this.backgroundAudio.paused) {
-                    this.backgroundAudio.pause();
-                }
-            } else {
-                if (this.backgroundAudio && this.backgroundMusicEnabled) {
-                    this.tryPlayBackgroundMusic();
-                }
+    setupVolumeEventListeners() {
+        // Use event delegation for volume controls
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'tap-sound-toggle') {
+                this.tapSoundEnabled = e.target.checked;
+                this.saveData();
+            }
+            
+            if (e.target.id === 'bg-sound-toggle') {
+                this.bgSoundEnabled = e.target.checked;
+                this.toggleBackgroundAudio();
+                this.saveData();
+            }
+        });
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'tap-volume') {
+                this.tapVolume = parseInt(e.target.value);
+                const valueDisplay = document.getElementById('tap-volume-value');
+                if (valueDisplay) valueDisplay.textContent = this.tapVolume;
+                this.saveData();
+            }
+            
+            if (e.target.id === 'bg-volume') {
+                this.bgVolume = parseInt(e.target.value);
+                const valueDisplay = document.getElementById('bg-volume-value');
+                if (valueDisplay) valueDisplay.textContent = this.bgVolume;
+                this.updateBackgroundVolume();
+                this.saveData();
             }
         });
     }
 
-    setupNavigation() {
-        const navButtons = document.querySelectorAll('.nav-btn');
-        navButtons.forEach(btn => {
-            // Use both touch and click events for better mobile support
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const screen = btn.getAttribute('data-screen');
-                this.navigateToScreen(screen);
-                
-                // Try to start background music on first navigation
-                this.ensureBackgroundMusic();
-            }, { passive: false });
-
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const screen = btn.getAttribute('data-screen');
-                this.navigateToScreen(screen);
-                
-                // Try to start background music on first click
-                this.ensureBackgroundMusic();
-            });
-        });
-    }
-
-    ensureBackgroundMusic() {
-        if (this.backgroundAudio && this.backgroundAudio.paused && this.backgroundMusicEnabled) {
-            this.tryPlayBackgroundMusic();
-        }
-    }
-
-    setupTapAreas() {
-        // Create tap areas covering the entire screen except header and footer
-        document.addEventListener('touchend', (e) => {
-            this.handleTap(e);
-        }, { passive: false });
-
-        document.addEventListener('click', (e) => {
-            this.handleTap(e);
-        });
-    }
-
-    handleTap(e) {
-        // Only handle taps on home screen
-        if (this.currentScreen !== 'home') return;
-
-        // Check if tap is in excluded areas
-        const target = e.target;
-        const excludedSelectors = ['.header', '.bottom-nav', 'header', 'footer', 'nav', '.nav-btn'];
-        
-        for (let selector of excludedSelectors) {
-            if (target.closest(selector)) {
-                return; // Don't increment counter for excluded areas
-            }
-        }
-
-        // Don't handle taps on interactive elements like buttons or links
-        if (target.tagName === 'BUTTON' || target.tagName === 'A' || target.tagName === 'INPUT') {
-            return;
-        }
-
-        // Increment counter for valid tap areas
-        e.preventDefault();
-        this.incrementCounter();
-        
-        // Ensure background music starts on first tap
-        this.ensureBackgroundMusic();
-    }
-
-    setupOtherEventListeners() {
-        // Chart tabs
-        const chartTabs = document.querySelectorAll('.chart-tab');
-        chartTabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const period = tab.getAttribute('data-period');
-                this.switchChartPeriod(period);
-            });
-        });
-
-        // Settings event listeners
-        this.setupSettingsEventListeners();
-
-        // Achievement modal
-        const closeAchievementBtn = document.getElementById('close-achievement');
-        if (closeAchievementBtn) {
-            closeAchievementBtn.addEventListener('click', () => {
-                this.hideAchievementModal();
-            });
-        }
-    }
-
-    setupSettingsEventListeners() {
-        // Save daily goal
-        const saveGoalBtn = document.getElementById('save-goal-btn');
-        if (saveGoalBtn) {
-            saveGoalBtn.addEventListener('click', () => {
-                this.saveDailyGoal();
-            });
-        }
-
-        // Sound toggle
-        const soundToggle = document.getElementById('sound-toggle');
-        if (soundToggle) {
-            soundToggle.addEventListener('change', (e) => {
-                this.soundEnabled = e.target.checked;
-                this.saveData();
-            });
-        }
-
-        // Background music toggle
-        const backgroundMusicToggle = document.getElementById('background-music-toggle');
-        if (backgroundMusicToggle) {
-            backgroundMusicToggle.addEventListener('change', (e) => {
-                this.backgroundMusicEnabled = e.target.checked;
-                this.toggleBackgroundMusic();
-                this.saveData();
-            });
-        }
-
-        // Background volume
-        const backgroundVolumeSlider = document.getElementById('background-volume');
-        if (backgroundVolumeSlider) {
-            backgroundVolumeSlider.addEventListener('input', (e) => {
-                this.backgroundVolume = e.target.value / 100;
-                if (this.backgroundAudio) {
-                    this.backgroundAudio.volume = this.backgroundVolume;
-                }
-                this.saveData();
-            });
-        }
-
-        // Tap volume
+    initializeVolumeControls() {
+        // Set initial values for volume controls
+        const tapSoundToggle = document.getElementById('tap-sound-toggle');
         const tapVolumeSlider = document.getElementById('tap-volume');
-        if (tapVolumeSlider) {
-            tapVolumeSlider.addEventListener('input', (e) => {
-                this.tapVolume = e.target.value / 100;
-                if (this.namAudio) {
-                    this.namAudio.volume = this.tapVolume;
-                }
-                this.saveData();
-            });
-        }
+        const tapVolumeValue = document.getElementById('tap-volume-value');
+        const bgSoundToggle = document.getElementById('bg-sound-toggle');
+        const bgVolumeSlider = document.getElementById('bg-volume');
+        const bgVolumeValue = document.getElementById('bg-volume-value');
 
-        // Data management buttons
-        const exportBtn = document.getElementById('export-data-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                this.exportData();
-            });
-        }
+        if (tapSoundToggle) tapSoundToggle.checked = this.tapSoundEnabled;
+        if (tapVolumeSlider) tapVolumeSlider.value = this.tapVolume;
+        if (tapVolumeValue) tapVolumeValue.textContent = this.tapVolume;
+        if (bgSoundToggle) bgSoundToggle.checked = this.bgSoundEnabled;
+        if (bgVolumeSlider) bgVolumeSlider.value = this.bgVolume;
+        if (bgVolumeValue) bgVolumeValue.textContent = this.bgVolume;
+    }
 
-        const resetBtn = document.getElementById('reset-data-btn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.resetData();
-            });
+    initializeBackgroundAudio() {
+        if (this.bgSoundEnabled) {
+            this.createBackgroundAudio();
         }
     }
 
-    toggleBackgroundMusic() {
-        if (!this.backgroundAudio) return;
+    createBackgroundAudio() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(this.bgVolume / 1000, audioContext.currentTime);
+            
+            oscillator.start();
+            
+            this.bgAudioContext = audioContext;
+            this.bgGainNode = gainNode;
+            this.bgOscillator = oscillator;
+        } catch (e) {
+            console.log('Background audio not supported');
+        }
+    }
 
-        if (this.backgroundMusicEnabled) {
-            this.tryPlayBackgroundMusic();
+    toggleBackgroundAudio() {
+        if (this.bgSoundEnabled) {
+            this.createBackgroundAudio();
         } else {
-            this.backgroundAudio.pause();
+            if (this.bgOscillator) {
+                this.bgOscillator.stop();
+                this.bgOscillator = null;
+                this.bgGainNode = null;
+                this.bgAudioContext = null;
+            }
+        }
+    }
+
+    updateBackgroundVolume() {
+        if (this.bgGainNode) {
+            this.bgGainNode.gain.setValueAtTime(this.bgVolume / 1000, this.bgAudioContext.currentTime);
         }
     }
 
@@ -360,10 +281,24 @@ class RamNameJapApp {
         this.checkAchievements();
         this.playTapSound();
         this.addCountAnimation();
+        this.animateRamImage();
 
         // Haptic feedback if supported
         if (navigator.vibrate) {
             navigator.vibrate(50);
+        }
+    }
+
+    animateRamImage() {
+        const ramImage = document.getElementById('ram-image');
+        if (ramImage) {
+            ramImage.classList.remove('animate');
+            ramImage.offsetHeight; // Force reflow
+            ramImage.classList.add('animate');
+            
+            setTimeout(() => {
+                ramImage.classList.remove('animate');
+            }, 600);
         }
     }
 
@@ -385,23 +320,8 @@ class RamNameJapApp {
     }
 
     playTapSound() {
-        if (!this.soundEnabled) return;
+        if (!this.tapSoundEnabled) return;
         
-        if (this.namAudio) {
-            try {
-                // Reset audio to beginning and play
-                this.namAudio.currentTime = 0;
-                this.namAudio.play().catch(console.error);
-            } catch (e) {
-                console.log('Error playing tap sound:', e);
-            }
-        } else {
-            // Fallback beep sound using Web Audio API
-            this.playBeepSound();
-        }
-    }
-
-    playBeepSound() {
         try {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
@@ -411,7 +331,7 @@ class RamNameJapApp {
             gainNode.connect(audioContext.destination);
             
             oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            gainNode.gain.setValueAtTime(this.tapVolume * 0.1, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(this.tapVolume / 1000, audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
             
             oscillator.start();
@@ -471,8 +391,11 @@ class RamNameJapApp {
     }
 
     navigateToScreen(screenName) {
+        console.log('Navigating to screen:', screenName);
+        
         // Hide all screens
-        document.querySelectorAll('.screen').forEach(screen => {
+        const allScreens = document.querySelectorAll('.screen');
+        allScreens.forEach(screen => {
             screen.classList.remove('active');
         });
 
@@ -480,24 +403,34 @@ class RamNameJapApp {
         const targetScreen = document.getElementById(`${screenName}-screen`);
         if (targetScreen) {
             targetScreen.classList.add('active');
+            console.log('Successfully activated screen:', screenName);
+        } else {
+            console.error('Screen not found:', `${screenName}-screen`);
+            return;
         }
         
-        // Update navigation active state
-        document.querySelectorAll('.nav-btn').forEach(btn => {
+        // Update navigation active state in all bottom navs
+        const allNavButtons = document.querySelectorAll('.nav-btn[data-screen]');
+        allNavButtons.forEach(btn => {
             btn.classList.remove('active');
         });
         
-        document.querySelectorAll(`[data-screen="${screenName}"]`).forEach(btn => {
+        const activeNavButtons = document.querySelectorAll(`[data-screen="${screenName}"]`);
+        activeNavButtons.forEach(btn => {
             btn.classList.add('active');
         });
         
         this.currentScreen = screenName;
         
-        // Initialize chart if navigating to dashboard
+        // Initialize specific screen features
         if (screenName === 'dashboard') {
             setTimeout(() => {
                 this.initializeChart();
                 this.renderAchievements();
+            }, 100);
+        } else if (screenName === 'settings') {
+            setTimeout(() => {
+                this.initializeVolumeControls();
             }, 100);
         }
     }
@@ -743,10 +676,10 @@ class RamNameJapApp {
             dailyGoal: this.dailyGoal,
             dailyData: this.getData('dailyData') || {},
             achievements: this.getData('achievements') || [],
-            soundEnabled: this.soundEnabled,
-            backgroundMusicEnabled: this.backgroundMusicEnabled,
-            backgroundVolume: this.backgroundVolume,
+            tapSoundEnabled: this.tapSoundEnabled,
             tapVolume: this.tapVolume,
+            bgSoundEnabled: this.bgSoundEnabled,
+            bgVolume: this.bgVolume,
             exportDate: new Date().toISOString()
         };
         
@@ -773,23 +706,18 @@ class RamNameJapApp {
 
     resetData() {
         if (confirm('क्या आप वाकई सभी डेटा रीसेट करना चाहते हैं? यह कार्य पूर्ववत नहीं हो सकता।')) {
-            // Clear all stored data
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('ramNameJap_')) {
-                    localStorage.removeItem(key);
-                }
-            });
-            
-            // Reset app state
+            localStorage.clear();
             this.currentCount = 0;
             this.dailyGoal = 2400;
-            this.soundEnabled = true;
-            this.backgroundMusicEnabled = true;
-            this.backgroundVolume = 0.3;
-            this.tapVolume = 0.7;
+            this.tapSoundEnabled = true;
+            this.tapVolume = 50;
+            this.bgSoundEnabled = false;
+            this.bgVolume = 30;
             
-            // Reset UI elements
-            this.updateFormElements();
+            const goalInput = document.getElementById('daily-goal-input');
+            if (goalInput) goalInput.value = 2400;
+            
+            this.initializeVolumeControls();
             this.updateDisplay();
             this.updateProgressRing();
             this.updateDailyGoal();
@@ -800,45 +728,34 @@ class RamNameJapApp {
                 this.initializeChart();
             }
             
+            if (this.bgOscillator) {
+                this.bgOscillator.stop();
+                this.bgOscillator = null;
+            }
+            
             alert('सभी डेटा रीसेट हो गया है।');
         }
-    }
-
-    updateFormElements() {
-        const goalInput = document.getElementById('daily-goal-input');
-        const soundToggle = document.getElementById('sound-toggle');
-        const backgroundMusicToggle = document.getElementById('background-music-toggle');
-        const backgroundVolumeSlider = document.getElementById('background-volume');
-        const tapVolumeSlider = document.getElementById('tap-volume');
-        
-        if (goalInput) goalInput.value = this.dailyGoal;
-        if (soundToggle) soundToggle.checked = this.soundEnabled;
-        if (backgroundMusicToggle) backgroundMusicToggle.checked = this.backgroundMusicEnabled;
-        if (backgroundVolumeSlider) backgroundVolumeSlider.value = this.backgroundVolume * 100;
-        if (tapVolumeSlider) tapVolumeSlider.value = this.tapVolume * 100;
     }
 
     saveData() {
         this.setData('currentCount', this.currentCount);
         this.setData('dailyGoal', this.dailyGoal);
-        this.setData('soundEnabled', this.soundEnabled);
-        this.setData('backgroundMusicEnabled', this.backgroundMusicEnabled);
-        this.setData('backgroundVolume', this.backgroundVolume);
+        this.setData('tapSoundEnabled', this.tapSoundEnabled);
         this.setData('tapVolume', this.tapVolume);
+        this.setData('bgSoundEnabled', this.bgSoundEnabled);
+        this.setData('bgVolume', this.bgVolume);
     }
 
     loadData() {
         this.currentCount = this.getData('currentCount') || 0;
         this.dailyGoal = this.getData('dailyGoal') || 2400;
-        this.soundEnabled = this.getData('soundEnabled') !== false;
-        this.backgroundMusicEnabled = this.getData('backgroundMusicEnabled') !== false;
-        this.backgroundVolume = this.getData('backgroundVolume') || 0.3;
-        this.tapVolume = this.getData('tapVolume') || 0.7;
+        this.tapSoundEnabled = this.getData('tapSoundEnabled') !== false;
+        this.tapVolume = this.getData('tapVolume') || 50;
+        this.bgSoundEnabled = this.getData('bgSoundEnabled') || false;
+        this.bgVolume = this.getData('bgVolume') || 30;
         
-        // Update form elements
-        setTimeout(() => {
-            this.updateFormElements();
-        }, 100);
+        const goalInput = document.getElementById('daily-goal-input');
+        if (goalInput) goalInput.value = this.dailyGoal;
     }
 
     getData(key) {
@@ -865,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ramApp = new RamNameJapApp();
 });
 
-// Service Worker registration for PWA
+// Service Worker registration for PWA (optional)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')

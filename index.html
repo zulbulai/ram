@@ -6,22 +6,10 @@
     <title>राम नाम जप काउंटर</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Background Image -->
-    <div class="background-image"></div>
-
-    <!-- Background Audio -->
-    <audio id="background-audio" loop preload="auto">
-        <source src="background.mp3" type="audio/mpeg">
-    </audio>
-
-    <!-- Tap Audio -->
-    <audio id="nam-audio" preload="auto">
-        <source src="nam.mp3" type="audio/mpeg">
-    </audio>
-
     <!-- Home Screen -->
     <div id="home-screen" class="screen active">
         <!-- Header -->
@@ -39,8 +27,8 @@
                         <circle class="progress-ring-circle" cx="150" cy="150" r="130" stroke-width="8" fill="none"/>
                     </svg>
                     <div class="center-circle">
-                        <div class="ram-image">
-                            <img src="ram.png" alt="भगवान राम" />
+                        <div class="ram-image" id="ram-image">
+                            <img src="https://pplx-res.cloudinary.com/image/upload/v1755273646/pplx_project_search_images/08bd8c2154828f10d709a0bb22c4c682d2054cd9.png" alt="भगवान राम" />
                         </div>
                     </div>
                 </div>
@@ -67,20 +55,24 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn active" data-screen="home">
-                <span class="nav-icon">🏠</span>
+                <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">होम</span>
             </button>
             <button class="nav-btn" data-screen="dashboard">
-                <span class="nav-icon">📊</span>
+                <i class="fas fa-chart-bar nav-icon"></i>
                 <span class="nav-label">डैशबोर्ड</span>
             </button>
             <button class="nav-btn" data-screen="resources">
-                <span class="nav-icon">📖</span>
+                <i class="fas fa-book nav-icon"></i>
                 <span class="nav-label">संसाधन</span>
             </button>
             <button class="nav-btn" data-screen="settings">
-                <span class="nav-icon">⚙️</span>
+                <i class="fas fa-cog nav-icon"></i>
                 <span class="nav-label">सेटिंग्स</span>
+            </button>
+            <button class="nav-btn" id="share-btn">
+                <i class="fab fa-whatsapp nav-icon"></i>
+                <span class="nav-label">साझा करें</span>
             </button>
         </nav>
     </div>
@@ -124,20 +116,24 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn" data-screen="home">
-                <span class="nav-icon">🏠</span>
+                <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">होम</span>
             </button>
             <button class="nav-btn active" data-screen="dashboard">
-                <span class="nav-icon">📊</span>
+                <i class="fas fa-chart-bar nav-icon"></i>
                 <span class="nav-label">डैशबोर्ड</span>
             </button>
             <button class="nav-btn" data-screen="resources">
-                <span class="nav-icon">📖</span>
+                <i class="fas fa-book nav-icon"></i>
                 <span class="nav-label">संसाधन</span>
             </button>
             <button class="nav-btn" data-screen="settings">
-                <span class="nav-icon">⚙️</span>
+                <i class="fas fa-cog nav-icon"></i>
                 <span class="nav-label">सेटिंग्स</span>
+            </button>
+            <button class="nav-btn" id="share-btn">
+                <i class="fab fa-whatsapp nav-icon"></i>
+                <span class="nav-label">साझा करें</span>
             </button>
         </nav>
     </div>
@@ -185,20 +181,24 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn" data-screen="home">
-                <span class="nav-icon">🏠</span>
+                <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">होम</span>
             </button>
             <button class="nav-btn" data-screen="dashboard">
-                <span class="nav-icon">📊</span>
+                <i class="fas fa-chart-bar nav-icon"></i>
                 <span class="nav-label">डैशबोर्ड</span>
             </button>
             <button class="nav-btn active" data-screen="resources">
-                <span class="nav-icon">📖</span>
+                <i class="fas fa-book nav-icon"></i>
                 <span class="nav-label">संसाधन</span>
             </button>
             <button class="nav-btn" data-screen="settings">
-                <span class="nav-icon">⚙️</span>
+                <i class="fas fa-cog nav-icon"></i>
                 <span class="nav-label">सेटिंग्स</span>
+            </button>
+            <button class="nav-btn" id="share-btn">
+                <i class="fab fa-whatsapp nav-icon"></i>
+                <span class="nav-label">साझा करें</span>
             </button>
         </nav>
     </div>
@@ -220,28 +220,44 @@
             </div>
 
             <div class="settings-section">
-                <h3>ध्वनि सेटिंग्स</h3>
-                <div class="setting-item">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="sound-toggle" checked>
-                        <span class="checkmark"></span>
-                        टैप आवाज़
-                    </label>
+                <h3>उन्नत ध्वनि सेटिंग्स</h3>
+                
+                <!-- Tap Sound Controls -->
+                <div class="volume-control-group">
+                    <h4>टैप ध्वनि</h4>
+                    <div class="volume-control">
+                        <label class="volume-switch">
+                            <input type="checkbox" id="tap-sound-toggle" checked>
+                            <span class="volume-switch-slider"></span>
+                            <span class="volume-switch-label">टैप ध्वनि चालू करें</span>
+                        </label>
+                    </div>
+                    <div class="volume-slider-container">
+                        <label for="tap-volume">टैप ध्वनि वॉल्यूम</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="tap-volume" class="volume-slider" min="0" max="100" value="50">
+                            <span class="volume-value" id="tap-volume-value">50</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="setting-item">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="background-music-toggle" checked>
-                        <span class="checkmark"></span>
-                        बैकग्राउंड संगीत
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label for="background-volume">बैकग्राउंड संगीत आवाज़ का स्तर</label>
-                    <input type="range" id="background-volume" min="0" max="100" value="30" class="form-control">
-                </div>
-                <div class="setting-item">
-                    <label for="tap-volume">टैप आवाज़ का स्तर</label>
-                    <input type="range" id="tap-volume" min="0" max="100" value="70" class="form-control">
+
+                <!-- Background Sound Controls -->
+                <div class="volume-control-group">
+                    <h4>बैकग्राउंड ध्वनि</h4>
+                    <div class="volume-control">
+                        <label class="volume-switch">
+                            <input type="checkbox" id="bg-sound-toggle">
+                            <span class="volume-switch-slider"></span>
+                            <span class="volume-switch-label">बैकग्राउंड ध्वनि चालू करें</span>
+                        </label>
+                    </div>
+                    <div class="volume-slider-container">
+                        <label for="bg-volume">बैकग्राउंड वॉल्यूम</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="bg-volume" class="volume-slider" min="0" max="100" value="30">
+                            <span class="volume-value" id="bg-volume-value">30</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -264,20 +280,24 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn" data-screen="home">
-                <span class="nav-icon">🏠</span>
+                <i class="fas fa-home nav-icon"></i>
                 <span class="nav-label">होम</span>
             </button>
             <button class="nav-btn" data-screen="dashboard">
-                <span class="nav-icon">📊</span>
+                <i class="fas fa-chart-bar nav-icon"></i>
                 <span class="nav-label">डैशबोर्ड</span>
             </button>
             <button class="nav-btn" data-screen="resources">
-                <span class="nav-icon">📖</span>
+                <i class="fas fa-book nav-icon"></i>
                 <span class="nav-label">संसाधन</span>
             </button>
             <button class="nav-btn active" data-screen="settings">
-                <span class="nav-icon">⚙️</span>
+                <i class="fas fa-cog nav-icon"></i>
                 <span class="nav-label">सेटिंग्स</span>
+            </button>
+            <button class="nav-btn" id="share-btn">
+                <i class="fab fa-whatsapp nav-icon"></i>
+                <span class="nav-label">साझा करें</span>
             </button>
         </nav>
     </div>
