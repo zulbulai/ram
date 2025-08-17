@@ -817,7 +817,6 @@ body {
   display: none;
   min-height: 100vh;
   padding-bottom: 80px;
-  transition: all 0.3s ease;
 }
 
 .screen.active {
@@ -831,7 +830,7 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Header Styles - Fixed Height */
+/* Header Styles */
 .header {
   text-align: center;
   padding: 20px 0;
@@ -867,7 +866,6 @@ body {
   max-width: 200px;
   object-fit: contain;
   filter: brightness(1.1) contrast(1.1);
-  transition: all 0.3s ease;
 }
 
 .ram-title {
@@ -889,23 +887,22 @@ body {
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
-/* CRITICAL: Main Counter Area Layout */
+/* Main Counter Area Layout */
 .main-counter {
   flex: 1;
   position: relative;
   cursor: pointer;
-  min-height: calc(100vh - 160px); /* Account for header + footer */
+  min-height: calc(100vh - 160px);
   overflow: hidden;
 }
 
-/* CRITICAL: Center Circle - FIXED POSITION */
+/* Center Circle - FIXED POSITION */
 .center-circle-container {
   position: fixed;
-  top: 25%;
+  top: 20%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  transition: all 0.2s ease;
 }
 
 .center-circle-container:hover {
@@ -916,7 +913,7 @@ body {
   transform: translateX(-50%) scale(0.98);
 }
 
-/* TAP ANIMATION */
+/* TAP ANIMATION - Only one kept as requested */
 .center-circle-container.tap-animate {
   animation: tapPulse 0.3s ease;
 }
@@ -934,7 +931,6 @@ body {
   justify-content: center;
 }
 
-/* LARGER Progress Ring - Tight Fit */
 .progress-ring {
   transform: rotate(-90deg);
   filter: drop-shadow(0 0 15px var(--devotional-shadow));
@@ -952,12 +948,11 @@ body {
   stroke-linecap: round;
   stroke-dasharray: 911; /* 2 * PI * 145 */
   stroke-dashoffset: 911;
-  transition: stroke-dashoffset 0.3s ease;
+  /* NO transition - as requested to remove animations */
   filter: drop-shadow(0 0 8px var(--devotional-orange));
   stroke-width: 10;
 }
 
-/* LARGER Center Circle */
 .center-circle {
   position: absolute;
   top: 50%;
@@ -974,7 +969,6 @@ body {
     0 0 40px var(--devotional-shadow),
     inset 0 0 30px rgba(255, 255, 255, 0.3);
   border: 4px solid var(--devotional-gold);
-  transition: all 0.2s ease;
 }
 
 .center-circle:active {
@@ -984,7 +978,7 @@ body {
     inset 0 0 40px rgba(255, 255, 255, 0.5);
 }
 
-/* LARGER Ram Image - 180px as specified */
+/* Ram Image */
 .ram-image {
   width: 180px;
   height: 180px;
@@ -992,7 +986,6 @@ body {
   overflow: hidden;
   border: 3px solid white;
   box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
   position: relative;
 }
 
@@ -1001,7 +994,6 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: all 0.2s ease;
 }
 
 /* Ram Image Fallback */
@@ -1024,7 +1016,7 @@ body {
   letter-spacing: 2px;
 }
 
-/* Ram Image Animation on Tap */
+/* Ram Image Animation on Tap - ONLY animation kept as requested */
 .ram-image.animate {
   animation: ramImagePulse 0.4s ease;
 }
@@ -1035,56 +1027,104 @@ body {
   100% { transform: scale(1) rotate(0deg); }
 }
 
-/* CRITICAL: Counter Display - LOWER POSITION */
-.counter-display {
+/* UNIFIED COUNTER AND PROGRESS BLOCK */
+.unified-counter-block {
   position: fixed;
-  top: 60%;
+  top: 55%;
   left: 50%;
   transform: translateX(-50%);
-  text-align: center;
+  width: 90%;
+  max-width: 350px;
   z-index: 200;
   cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 20px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--color-card-border);
   backdrop-filter: blur(10px);
+  padding: 25px 20px;
 }
 
-.counter-display:hover {
+.unified-counter-block:hover {
   transform: translateX(-50%) translateY(-2px);
+}
+
+/* Counter Section */
+.counter-section {
+  text-align: center;
+  margin-bottom: 25px;
 }
 
 .count-label {
   font-size: 18px;
   font-weight: 500;
   color: var(--devotional-brown);
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   font-family: 'Noto Sans Devanagari', sans-serif;
 }
 
-.count-number {
-  font-size: 64px;
+/* ODOMETER COUNTER - Car Meter Style */
+.odometer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.digit {
+  position: relative;
+  width: 50px;
+  height: 70px;
+  background: linear-gradient(135deg, var(--devotional-orange) 0%, var(--devotional-gold) 100%);
+  border-radius: var(--radius-base);
+  border: 3px solid var(--devotional-brown);
+  box-shadow: 
+    0 4px 8px var(--devotional-shadow),
+    inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.digit-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.digit-value {
+  font-size: 36px;
   font-weight: 700;
-  color: var(--devotional-orange);
-  text-shadow: 2px 2px 4px var(--devotional-shadow);
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   font-family: 'Noto Sans Devanagari', monospace;
-  transition: all 0.3s ease;
   line-height: 1;
+  position: absolute;
+  transition: transform 0.4s ease-out;
 }
 
-.count-number.animate {
-  transform: scale(1.1);
-  color: var(--devotional-red);
-  animation: countPulse 0.4s ease;
+.digit-value.old {
+  animation: digitRollUp 0.4s ease-out forwards;
 }
 
-@keyframes countPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+.digit-value.new {
+  animation: digitRollDown 0.4s ease-out forwards;
+}
+
+@keyframes digitRollUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes digitRollDown {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }
 
 .tap-hint {
@@ -1101,29 +1141,17 @@ body {
   50% { opacity: 1; }
 }
 
-/* Daily Goal Section - Bottom Area */
-.daily-goal-section {
-  position: fixed;
-  bottom: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  max-width: 300px;
-  text-align: center;
-  z-index: 150;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 15px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-card-border);
-  backdrop-filter: blur(10px);
+/* Progress Section */
+.progress-section {
+  border-top: 2px solid rgba(255, 140, 0, 0.2);
+  padding-top: 20px;
 }
 
 .goal-text {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 16px;
   font-weight: 500;
   color: var(--devotional-brown);
@@ -1137,7 +1165,7 @@ body {
 
 .goal-progress-bar {
   width: 100%;
-  height: 8px;
+  height: 12px;
   background: rgba(255, 140, 0, 0.2);
   border-radius: 10px;
   overflow: hidden;
@@ -1148,12 +1176,12 @@ body {
   height: 100%;
   background: linear-gradient(90deg, var(--devotional-orange) 0%, var(--devotional-gold) 100%);
   border-radius: 10px;
-  transition: width 0.5s ease;
+  /* NO transition - as requested to remove animations */
   width: 0%;
   box-shadow: 0 0 10px var(--devotional-shadow);
 }
 
-/* CRITICAL: Bottom Navigation - FIXED with 5 tabs */
+/* Bottom Navigation - FIXED with 5 tabs */
 .bottom-nav {
   position: fixed;
   bottom: 0;
@@ -1179,7 +1207,7 @@ body {
   border: none;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
   padding: 8px 6px;
   border-radius: 10px;
   flex: 1;
@@ -1227,7 +1255,7 @@ body {
   text-align: center;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-card-border);
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
 }
 
 .stats-card:hover {
@@ -1279,7 +1307,7 @@ body {
   font-weight: 500;
   color: var(--color-text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
   border-radius: var(--radius-base);
   font-family: 'Noto Sans Devanagari', sans-serif;
   white-space: nowrap;
@@ -1328,7 +1356,7 @@ body {
   padding: 15px 10px;
   text-align: center;
   box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
   border: 2px solid var(--color-card-border);
 }
 
@@ -1370,7 +1398,7 @@ body {
   padding: 25px;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-card-border);
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
 }
 
 .resource-card:hover {
@@ -1555,7 +1583,7 @@ body {
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-standard);
+  /* NO transition - as requested to remove animations */
   border: none;
   text-decoration: none;
   display: inline-block;
@@ -1573,7 +1601,7 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+  /* NO transition - as requested to remove animations */
 }
 
 .btn:hover::before {
@@ -1625,7 +1653,7 @@ body {
   font-family: 'Noto Sans Devanagari', sans-serif;
   color: var(--color-text);
   background: var(--color-surface);
-  transition: all var(--duration-fast) var(--ease-standard);
+  /* NO transition - as requested to remove animations */
 }
 
 .form-control:focus {
@@ -1644,7 +1672,7 @@ body {
   z-index: 10000;
   opacity: 1;
   visibility: visible;
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1675,7 +1703,7 @@ body {
   width: 90%;
   box-shadow: var(--shadow-lg);
   transform: scale(1);
-  transition: all 0.3s ease;
+  /* NO transition - as requested to remove animations */
   position: relative;
   z-index: 10001;
   border: 1px solid var(--color-card-border);
@@ -1722,7 +1750,6 @@ body {
     max-height: 50px;
   }
   
-  /* Adjust for smaller screens */
   .center-circle {
     width: 220px;
     height: 220px;
@@ -1742,8 +1769,13 @@ body {
     height: 280px;
   }
   
-  .count-number {
-    font-size: 48px;
+  .digit {
+    width: 40px;
+    height: 60px;
+  }
+  
+  .digit-value {
+    font-size: 28px;
   }
   
   .lifetime-number, .streak-number {
@@ -1775,8 +1807,13 @@ body {
     height: 250px;
   }
   
-  .count-number {
-    font-size: 40px;
+  .digit {
+    width: 35px;
+    height: 50px;
+  }
+  
+  .digit-value {
+    font-size: 24px;
   }
   
   .achievements-grid {

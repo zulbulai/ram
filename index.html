@@ -47,21 +47,26 @@
                 </div>
             </div>
 
-            <!-- Counter Display - Lower Position -->
-            <div class="counter-display" id="counter-display">
-                <p class="count-label">आपका काउंट</p>
-                <div class="count-number" id="count-display">0</div>
-                <div class="tap-hint">टैप करें</div>
-            </div>
-
-            <!-- Daily Goal Progress -->
-            <div class="daily-goal-section">
-                <div class="goal-text">
-                    <span>आज का लक्ष्य: <span id="daily-goal-text">2400</span></span>
-                    <span class="goal-percentage" id="goal-percentage">0%</span>
+            <!-- Unified Counter and Progress Block -->
+            <div class="unified-counter-block" id="unified-counter-block">
+                <!-- Odometer Counter Display -->
+                <div class="counter-section">
+                    <p class="count-label">आपका काउंट</p>
+                    <div class="odometer-container" id="odometer-container">
+                        <!-- Digits will be populated by JavaScript -->
+                    </div>
+                    <div class="tap-hint">टैप करें</div>
                 </div>
-                <div class="goal-progress-bar">
-                    <div class="goal-progress-fill" id="goal-progress-fill"></div>
+
+                <!-- Progress Bar Section -->
+                <div class="progress-section">
+                    <div class="goal-text">
+                        <span>आज का लक्ष्य: <span id="daily-goal-text">2400</span></span>
+                        <span class="goal-percentage" id="goal-percentage">0%</span>
+                    </div>
+                    <div class="goal-progress-bar">
+                        <div class="goal-progress-fill" id="goal-progress-fill"></div>
+                    </div>
                 </div>
             </div>
         </main>

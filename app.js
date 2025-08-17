@@ -1,4 +1,4 @@
-// Ram Naam Jap Counter App - Fixed Version
+// Ram Naam Jap Counter App - Odometer Version
 class RamNameJapApp {
     constructor() {
         this.currentCount = 0;
@@ -11,14 +11,16 @@ class RamNameJapApp {
         this.achievements = [100, 500, 1000, 2400, 5000, 10000, 25000, 50000, 100000];
         this.audio = null;
         this.isAudioInitialized = false;
+        this.odometerDigits = [];
         
         this.initializeApp();
     }
 
     initializeApp() {
-        console.log('Initializing Ram Naam Jap App...');
+        console.log('Initializing Ram Naam Jap App with Odometer...');
         this.loadData();
         this.initializeAudio();
+        this.initializeOdometer();
         this.updateDisplay();
         this.hideLoadingScreen();
         this.updateProgressRing();
@@ -30,6 +32,92 @@ class RamNameJapApp {
         setTimeout(() => {
             this.setupEventListeners();
         }, 100);
+    }
+
+    initializeOdometer() {
+        const container = document.getElementById('odometer-container');
+        if (!container) return;
+
+        // Start with 5 digits to handle counts up to 99999
+        const digitCount = 5;
+        const countStr = this.currentCount.toString().padStart(digitCount, '0');
+        
+        container.innerHTML = '';
+        this.odometerDigits = [];
+
+        for (let i = 0; i < digitCount; i++) {
+            const digitElement = document.createElement('div');
+            digitElement.className = 'digit';
+            
+            const digitInner = document.createElement('div');
+            digitInner.className = 'digit-inner';
+            
+            const digitValue = document.createElement('div');
+            digitValue.className = 'digit-value';
+            digitValue.textContent = countStr[i];
+            
+            digitInner.appendChild(digitValue);
+            digitElement.appendChild(digitInner);
+            container.appendChild(digitElement);
+            
+            this.odometerDigits.push({
+                element: digitElement,
+                inner: digitInner,
+                currentValue: countStr[i]
+            });
+        }
+    }
+
+    updateOdometer(newCount) {
+        const digitCount = Math.max(5, newCount.toString().length); // Dynamic length, minimum 5
+        const newCountStr = newCount.toString().padStart(digitCount, '0');
+        const oldCountStr = (newCount - 1).toString().padStart(digitCount, '0');
+        
+        // Adjust digit count if needed
+        if (newCountStr.length > this.odometerDigits.length) {
+            this.initializeOdometer();
+            return;
+        }
+
+        // Animate changed digits
+        for (let i = 0; i < this.odometerDigits.length; i++) {
+            const digitObj = this.odometerDigits[i];
+            const newDigit = newCountStr[i];
+            const oldDigit = i < oldCountStr.length ? oldCountStr[i] : '0';
+            
+            if (newDigit !== digitObj.currentValue) {
+                this.animateDigit(digitObj, oldDigit, newDigit);
+                digitObj.currentValue = newDigit;
+            }
+        }
+    }
+
+    animateDigit(digitObj, oldValue, newValue) {
+        const inner = digitObj.inner;
+        
+        // Create old digit element
+        const oldElement = document.createElement('div');
+        oldElement.className = 'digit-value old';
+        oldElement.textContent = oldValue;
+        
+        // Create new digit element
+        const newElement = document.createElement('div');
+        newElement.className = 'digit-value new';
+        newElement.textContent = newValue;
+        
+        // Clear current content and add both elements
+        inner.innerHTML = '';
+        inner.appendChild(oldElement);
+        inner.appendChild(newElement);
+        
+        // Clean up after animation
+        setTimeout(() => {
+            inner.innerHTML = '';
+            const finalElement = document.createElement('div');
+            finalElement.className = 'digit-value';
+            finalElement.textContent = newValue;
+            inner.appendChild(finalElement);
+        }, 400);
     }
 
     initializeAudio() {
@@ -78,7 +166,7 @@ class RamNameJapApp {
     setupEventListeners() {
         console.log('Setting up event listeners...');
         
-        // CRITICAL FIX: Setup navigation first
+        // Setup navigation first
         this.setupNavigation();
         
         // Setup counter functionality
@@ -116,11 +204,11 @@ class RamNameJapApp {
         
         // Counter functionality - tap areas that should increment counter
         const tapArea = document.getElementById('tap-area');
-        const counterDisplay = document.getElementById('counter-display');
+        const unifiedBlock = document.getElementById('unified-counter-block');
         const mainCounter = document.getElementById('counter-area');
         
         // Add click listeners to counter elements
-        [tapArea, counterDisplay].forEach(element => {
+        [tapArea, unifiedBlock].forEach(element => {
             if (element) {
                 element.addEventListener('click', (e) => {
                     // Only increment if we're on home screen and not clicking nav
@@ -140,8 +228,7 @@ class RamNameJapApp {
                 if (this.currentScreen === 'home' && 
                     !e.target.closest('.bottom-nav') && 
                     !e.target.closest('.center-circle-container') &&
-                    !e.target.closest('.counter-display') &&
-                    !e.target.closest('.daily-goal-section')) {
+                    !e.target.closest('.unified-counter-block')) {
                     console.log('Main area tap detected');
                     this.handleTap();
                 }
@@ -298,13 +385,13 @@ class RamNameJapApp {
         console.log(`Counter incremented to: ${this.currentCount}`);
         
         this.storeTodayCount();
+        this.updateOdometer(this.currentCount);
         this.updateDisplay();
         this.updateProgressRing();
         this.updateDailyGoal();
         this.saveData();
         this.checkAchievements();
         this.playSound();
-        this.addCountAnimation();
         this.addRamImageAnimation();
         this.addTapAnimation();
         this.addHapticFeedback();
@@ -372,14 +459,6 @@ class RamNameJapApp {
         }
     }
 
-    addCountAnimation() {
-        const countDisplay = document.getElementById('count-display');
-        if (countDisplay) {
-            countDisplay.classList.add('animate');
-            setTimeout(() => countDisplay.classList.remove('animate'), 400);
-        }
-    }
-
     storeTodayCount() {
         const today = new Date().toDateString();
         const dailyData = this.getData('dailyData') || {};
@@ -388,12 +467,8 @@ class RamNameJapApp {
     }
 
     updateDisplay() {
-        const countDisplay = document.getElementById('count-display');
         const lifetimeCount = document.getElementById('lifetime-count');
         
-        if (countDisplay) {
-            countDisplay.textContent = this.currentCount.toLocaleString('hi-IN');
-        }
         if (lifetimeCount) {
             lifetimeCount.textContent = this.currentCount.toLocaleString('hi-IN');
         }
@@ -685,10 +760,6 @@ class RamNameJapApp {
                                 }
                             }
                         }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart'
                     }
                 }
             });
@@ -988,6 +1059,7 @@ class RamNameJapApp {
                 this.soundEnabled = true;
                 this.volume = 0.7;
                 
+                this.initializeOdometer();
                 this.initializeSettings();
                 this.updateDisplay();
                 this.updateProgressRing();
