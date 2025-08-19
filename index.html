@@ -9,6 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <!-- Background Image -->
+    <div class="background-container">
+        <img src="background.jpg" alt="Background" class="background-image" onerror="this.style.display='none';">
+        <div class="background-overlay"></div>
+    </div>
+
     <!-- Audio Element for Nam.mp3 -->
     <audio id="nam-audio" preload="auto">
         <source src="nam.mp3" type="audio/mpeg">
@@ -18,28 +24,33 @@
 
     <!-- Home Screen -->
     <div id="home-screen" class="screen active">
-        <!-- Header with Nam.png Image -->
+        <!-- Header with Nam.png Image (10% of screen) -->
         <header class="header">
             <div class="header-image-container">
-                <img src="nam.png" alt="राम" class="ram-image-header" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <h1 class="ram-title" style="display: none;">राम</h1>
+                <img src="nam.png" alt="राम नाम" class="nam-image-header" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <h1 class="nam-title">राम नाम</h1>
             </div>
         </header>
 
-        <!-- Main Counter Area -->
+        <!-- Main Counter Area (60% of screen) -->
         <main class="main-counter" id="counter-area">
-            <!-- Center Circle with Progress Ring - Fixed Position -->
-            <div class="center-circle-container" id="tap-area">
+            <!-- Center Circle with Progress Ring (35% of screen) -->
+            <div class="center-circle-section">
                 <div class="progress-ring-container">
-                    <svg class="progress-ring" width="320" height="320">
-                        <circle class="progress-ring-bg" cx="160" cy="160" r="145" stroke-width="10" fill="none"/>
-                        <circle class="progress-ring-circle" cx="160" cy="160" r="145" stroke-width="10" fill="none"/>
+                    <svg class="progress-ring" width="280" height="280">
+                        <defs>
+                            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#FF8C00;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#DC143C;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="progress-ring-bg" cx="140" cy="140" r="125" stroke-width="8" fill="none"/>
+                        <circle class="progress-ring-circle" cx="140" cy="140" r="125" stroke-width="8" fill="none" stroke="url(#ringGradient)"/>
                     </svg>
                     <div class="center-circle">
-                        <div class="ram-image">
-                            <!-- Updated Ram Image with fallback -->
-                            <img src="ram.png" alt="भगवान राम" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                            <div class="ram-fallback" style="display: none;">
+                        <div class="ram-image-container">
+                            <img src="ram.png" alt="भगवान राम" class="ram-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                            <div class="ram-fallback">
                                 <span class="ram-text">राम</span>
                             </div>
                         </div>
@@ -47,50 +58,46 @@
                 </div>
             </div>
 
-            <!-- Unified Counter and Progress Block -->
-            <div class="unified-counter-block" id="unified-counter-block">
-                <!-- Odometer Counter Display -->
-                <div class="counter-section">
-                    <p class="count-label">आपका काउंट</p>
+            <!-- Counter Section (25% of screen) -->
+            <div class="counter-section">
+                <div class="counter-card">
+                    <h2 class="counter-title">RAM NAAM COUNTER</h2>
                     <div class="odometer-container" id="odometer-container">
-                        <!-- Digits will be populated by JavaScript -->
+                        <!-- 5 digit boxes will be populated by JavaScript -->
                     </div>
-                    <div class="tap-hint">टैप करें</div>
-                </div>
-
-                <!-- Progress Bar Section -->
-                <div class="progress-section">
-                    <div class="goal-text">
-                        <span>आज का लक्ष्य: <span id="daily-goal-text">2400</span></span>
-                        <span class="goal-percentage" id="goal-percentage">0%</span>
-                    </div>
-                    <div class="goal-progress-bar">
-                        <div class="goal-progress-fill" id="goal-progress-fill"></div>
+                    <div class="progress-section">
+                        <div class="progress-info">
+                            <span class="progress-percentage" id="progress-percentage">0%</span>
+                            <span class="progress-goal" id="progress-goal">2400</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
 
-        <!-- Bottom Navigation - 5 Tabs Fixed -->
+        <!-- Bottom Navigation (15% of screen) -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-screen="home" id="nav-home">
+            <button class="nav-btn active" data-screen="home">
                 <span class="nav-icon">🏠</span>
                 <span class="nav-label">होम</span>
             </button>
-            <button class="nav-btn" data-screen="dashboard" id="nav-dashboard">
+            <button class="nav-btn" data-screen="dashboard">
                 <span class="nav-icon">📊</span>
                 <span class="nav-label">डैशबोर्ड</span>
             </button>
-            <button class="nav-btn" data-screen="resources" id="nav-resources">
+            <button class="nav-btn" data-screen="resources">
                 <span class="nav-icon">📖</span>
                 <span class="nav-label">संसाधन</span>
             </button>
-            <button class="nav-btn" data-screen="settings" id="nav-settings">
+            <button class="nav-btn" data-screen="settings">
                 <span class="nav-icon">⚙️</span>
                 <span class="nav-label">सेटिंग्स</span>
             </button>
-            <button class="nav-btn" data-screen="share" id="nav-share">
-                <span class="nav-icon">📤</span>
+            <button class="nav-btn" data-screen="share">
+                <span class="nav-icon">📲</span>
                 <span class="nav-label">शेयर</span>
             </button>
         </nav>
@@ -119,11 +126,11 @@
 
             <!-- Chart Tabs -->
             <div class="chart-tabs">
-                <button class="chart-tab active" data-period="daily" id="tab-daily">दैनिक</button>
-                <button class="chart-tab" data-period="weekly" id="tab-weekly">साप्ताहिक</button>
-                <button class="chart-tab" data-period="monthly" id="tab-monthly">मासिक</button>
-                <button class="chart-tab" data-period="yearly" id="tab-yearly">वार्षिक</button>
-                <button class="chart-tab" data-period="lifetime" id="tab-lifetime">जीवनकाल</button>
+                <button class="chart-tab active" data-period="daily">दैनिक</button>
+                <button class="chart-tab" data-period="weekly">साप्ताहिक</button>
+                <button class="chart-tab" data-period="monthly">मासिक</button>
+                <button class="chart-tab" data-period="yearly">वार्षिक</button>
+                <button class="chart-tab" data-period="lifetime">जीवनकाल</button>
             </div>
 
             <!-- Chart Container -->
@@ -132,7 +139,7 @@
             </div>
 
             <!-- Achievement Cards -->
-            <div class="achievements-section" id="achievements">
+            <div class="achievements-section">
                 <h3>उपलब्धियां</h3>
                 <div class="achievements-grid" id="achievements-grid">
                     <!-- Achievements will be populated by JavaScript -->
@@ -159,7 +166,7 @@
                 <span class="nav-label">सेटिंग्स</span>
             </button>
             <button class="nav-btn" data-screen="share">
-                <span class="nav-icon">📤</span>
+                <span class="nav-icon">📲</span>
                 <span class="nav-label">शेयर</span>
             </button>
         </nav>
@@ -203,14 +210,6 @@
                     दर्शन करें
                 </a>
             </div>
-
-            <div class="resource-card">
-                <h3>मंत्र चंतिंग गाइड</h3>
-                <p>राम नाम जप की सही विधि और नियम</p>
-                <a href="https://en.wikipedia.org/wiki/Ram_Nam" target="_blank" class="btn btn--primary">
-                    जानें
-                </a>
-            </div>
         </main>
 
         <!-- Bottom Navigation -->
@@ -232,7 +231,7 @@
                 <span class="nav-label">सेटिंग्स</span>
             </button>
             <button class="nav-btn" data-screen="share">
-                <span class="nav-icon">📤</span>
+                <span class="nav-icon">📲</span>
                 <span class="nav-label">शेयर</span>
             </button>
         </nav>
@@ -276,16 +275,6 @@
                 <button class="btn btn--secondary" id="export-data-btn">डेटा एक्सपोर्ट करें</button>
                 <button class="btn btn--outline" id="reset-data-btn">सभी डेटा रीसेट करें</button>
             </div>
-
-            <div class="settings-section">
-                <h3>ऐप की जानकारी</h3>
-                <div class="app-info">
-                    <p><strong>ऐप का नाम:</strong> राम नाम जप काउंटर</p>
-                    <p><strong>संस्करण:</strong> 2.1.0</p>
-                    <p><strong>निर्माता:</strong> भक्त समुदाय के लिए बनाया गया</p>
-                    <p><strong>अंतिम अपडेट:</strong> अगस्त 2025</p>
-                </div>
-            </div>
         </main>
 
         <!-- Bottom Navigation -->
@@ -307,7 +296,7 @@
                 <span class="nav-label">सेटिंग्स</span>
             </button>
             <button class="nav-btn" data-screen="share">
-                <span class="nav-icon">📤</span>
+                <span class="nav-icon">📲</span>
                 <span class="nav-label">शेयर</span>
             </button>
         </nav>
@@ -355,7 +344,7 @@
 
             <div class="share-message">
                 <h3>शेयर संदेश</h3>
-                <textarea id="share-text" class="form-control" readonly rows="4">मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। आप भी जुड़ें और रोज़ नाम जप करें 👉 ramjaap.vercel.app
+                <textarea id="share-text" class="form-control" readonly rows="4">मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। आप भी जुड़ें और रोज़ नाम जप करें।
 जय श्री राम!</textarea>
             </div>
         </main>
@@ -379,7 +368,7 @@
                 <span class="nav-label">सेटिंग्स</span>
             </button>
             <button class="nav-btn active" data-screen="share">
-                <span class="nav-icon">📤</span>
+                <span class="nav-icon">📲</span>
                 <span class="nav-label">शेयर</span>
             </button>
         </nav>
@@ -393,15 +382,6 @@
             <h3 id="achievement-title">बधाई हो!</h3>
             <p id="achievement-message">आपने एक नया माइलस्टोन हासिल किया है!</p>
             <button class="btn btn--primary" id="close-achievement">ठीक है</button>
-        </div>
-    </div>
-
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <h2>राम नाम जप</h2>
-            <p>कृपया प्रतीक्षा करें...</p>
         </div>
     </div>
 

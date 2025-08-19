@@ -1,4 +1,4 @@
-// Ram Naam Jap Counter App - Odometer Version
+// Professional Ram Naam Jap Counter - Fixed Navigation, No Animations
 class RamNameJapApp {
     constructor() {
         this.currentCount = 0;
@@ -17,14 +17,13 @@ class RamNameJapApp {
     }
 
     initializeApp() {
-        console.log('Initializing Ram Naam Jap App with Odometer...');
+        console.log('Initializing Professional Ram Naam Jap App...');
         this.loadData();
         this.initializeAudio();
         this.initializeOdometer();
         this.updateDisplay();
-        this.hideLoadingScreen();
         this.updateProgressRing();
-        this.updateDailyGoal();
+        this.updateProgressBar();
         this.renderAchievements();
         this.calculateStreak();
         
@@ -38,7 +37,7 @@ class RamNameJapApp {
         const container = document.getElementById('odometer-container');
         if (!container) return;
 
-        // Start with 5 digits to handle counts up to 99999
+        // Create 5 digit boxes
         const digitCount = 5;
         const countStr = this.currentCount.toString().padStart(digitCount, '0');
         
@@ -46,78 +45,38 @@ class RamNameJapApp {
         this.odometerDigits = [];
 
         for (let i = 0; i < digitCount; i++) {
-            const digitElement = document.createElement('div');
-            digitElement.className = 'digit';
-            
-            const digitInner = document.createElement('div');
-            digitInner.className = 'digit-inner';
+            const digitBox = document.createElement('div');
+            digitBox.className = 'digit-box';
             
             const digitValue = document.createElement('div');
             digitValue.className = 'digit-value';
             digitValue.textContent = countStr[i];
             
-            digitInner.appendChild(digitValue);
-            digitElement.appendChild(digitInner);
-            container.appendChild(digitElement);
+            digitBox.appendChild(digitValue);
+            container.appendChild(digitBox);
             
             this.odometerDigits.push({
-                element: digitElement,
-                inner: digitInner,
-                currentValue: countStr[i]
+                box: digitBox,
+                value: digitValue,
+                currentDigit: countStr[i]
             });
         }
     }
 
     updateOdometer(newCount) {
-        const digitCount = Math.max(5, newCount.toString().length); // Dynamic length, minimum 5
+        const digitCount = 5;
         const newCountStr = newCount.toString().padStart(digitCount, '0');
-        const oldCountStr = (newCount - 1).toString().padStart(digitCount, '0');
         
-        // Adjust digit count if needed
-        if (newCountStr.length > this.odometerDigits.length) {
-            this.initializeOdometer();
-            return;
-        }
-
-        // Animate changed digits
+        // Update each digit statically (no animations)
         for (let i = 0; i < this.odometerDigits.length; i++) {
             const digitObj = this.odometerDigits[i];
             const newDigit = newCountStr[i];
-            const oldDigit = i < oldCountStr.length ? oldCountStr[i] : '0';
             
-            if (newDigit !== digitObj.currentValue) {
-                this.animateDigit(digitObj, oldDigit, newDigit);
-                digitObj.currentValue = newDigit;
+            if (newDigit !== digitObj.currentDigit) {
+                digitObj.value.textContent = newDigit;
+                digitObj.currentDigit = newDigit;
             }
         }
-    }
-
-    animateDigit(digitObj, oldValue, newValue) {
-        const inner = digitObj.inner;
-        
-        // Create old digit element
-        const oldElement = document.createElement('div');
-        oldElement.className = 'digit-value old';
-        oldElement.textContent = oldValue;
-        
-        // Create new digit element
-        const newElement = document.createElement('div');
-        newElement.className = 'digit-value new';
-        newElement.textContent = newValue;
-        
-        // Clear current content and add both elements
-        inner.innerHTML = '';
-        inner.appendChild(oldElement);
-        inner.appendChild(newElement);
-        
-        // Clean up after animation
-        setTimeout(() => {
-            inner.innerHTML = '';
-            const finalElement = document.createElement('div');
-            finalElement.className = 'digit-value';
-            finalElement.textContent = newValue;
-            inner.appendChild(finalElement);
-        }, 400);
     }
 
     initializeAudio() {
@@ -125,54 +84,38 @@ class RamNameJapApp {
         if (this.audio) {
             this.audio.volume = this.volume;
             this.audio.preload = 'auto';
-            
-            this.audio.addEventListener('canplaythrough', () => {
-                this.isAudioInitialized = true;
-                console.log('Audio initialized successfully');
-            });
-
-            this.audio.addEventListener('error', () => {
-                console.log('Audio file not found, using Web Audio API fallback');
-                this.isAudioInitialized = false;
-            });
         }
 
         // Enable audio context on first user interaction
         const enableAudio = () => {
-            if (this.audio && this.audio.paused) {
-                this.audio.play().then(() => {
-                    this.audio.pause();
-                    this.audio.currentTime = 0;
-                    console.log('Audio context enabled');
-                }).catch(() => {
-                    console.log('Audio context activation failed');
-                });
+            if (this.audio) {
+                const playPromise = this.audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        this.audio.pause();
+                        this.audio.currentTime = 0;
+                        this.isAudioInitialized = true;
+                        console.log('Audio context enabled');
+                    }).catch(() => {
+                        console.log('Audio context activation failed');
+                    });
+                }
             }
         };
         
         document.addEventListener('click', enableAudio, { once: true });
-        document.addEventListener('touchstart', enableAudio, { once: true });
-    }
-
-    hideLoadingScreen() {
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('hidden');
-            }
-        }, 1500);
     }
 
     setupEventListeners() {
         console.log('Setting up event listeners...');
         
-        // Setup navigation first
+        // Navigation setup - FIXED
         this.setupNavigation();
         
-        // Setup counter functionality
+        // Counter area - tap to increment
         this.setupCounterArea();
         
-        // Setup other interactions
+        // Other functionality
         this.setupOtherEventListeners();
         
         // Prevent context menu
@@ -182,76 +125,74 @@ class RamNameJapApp {
     setupNavigation() {
         console.log('Setting up navigation...');
         
-        // Get all navigation buttons
+        // Remove any existing event listeners first
         const navButtons = document.querySelectorAll('.nav-btn[data-screen]');
         
         navButtons.forEach(button => {
+            // Clone node to remove all existing event listeners
+            const newButton = button.cloneNode(true);
+            button.parentNode.replaceChild(newButton, button);
+        });
+        
+        // Re-query the new buttons and add proper event listeners
+        const newNavButtons = document.querySelectorAll('.nav-btn[data-screen]');
+        
+        newNavButtons.forEach(button => {
             const screenName = button.getAttribute('data-screen');
+            console.log(`Setting up navigation for: ${screenName}`);
             
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
+                
                 console.log(`Navigation clicked: ${screenName}`);
                 this.navigateToScreen(screenName);
-            });
+                
+                return false;
+            }, true); // Use capture phase
         });
         
-        console.log(`Navigation setup complete for ${navButtons.length} buttons`);
+        console.log(`Navigation setup complete for ${newNavButtons.length} buttons`);
     }
 
     setupCounterArea() {
         console.log('Setting up counter area...');
         
-        // Counter functionality - tap areas that should increment counter
-        const tapArea = document.getElementById('tap-area');
-        const unifiedBlock = document.getElementById('unified-counter-block');
         const mainCounter = document.getElementById('counter-area');
         
-        // Add click listeners to counter elements
-        [tapArea, unifiedBlock].forEach(element => {
-            if (element) {
-                element.addEventListener('click', (e) => {
-                    // Only increment if we're on home screen and not clicking nav
-                    if (this.currentScreen === 'home' && !e.target.closest('.bottom-nav')) {
-                        e.stopPropagation();
-                        console.log('Counter tap detected');
-                        this.handleTap();
-                    }
-                });
-            }
-        });
-
-        // Also add listener to main counter area
         if (mainCounter) {
             mainCounter.addEventListener('click', (e) => {
-                // Only if clicking in empty space and not on nav or other interactive elements
+                // Only increment if on home screen and not clicking any button or navigation
                 if (this.currentScreen === 'home' && 
-                    !e.target.closest('.bottom-nav') && 
-                    !e.target.closest('.center-circle-container') &&
-                    !e.target.closest('.unified-counter-block')) {
-                    console.log('Main area tap detected');
-                    this.handleTap();
+                    !e.target.closest('.nav-btn') && 
+                    !e.target.closest('.bottom-nav') &&
+                    e.target.tagName !== 'BUTTON') {
+                    
+                    console.log('Counter area tap detected');
+                    this.incrementCounter();
                 }
             });
         }
 
-        // Keyboard support
+        // Keyboard support (spacebar)
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && this.currentScreen === 'home') {
                 e.preventDefault();
-                this.handleTap();
+                this.incrementCounter();
             }
         });
+
+        console.log('Counter area setup complete');
     }
 
     setupOtherEventListeners() {
         // Chart tabs
         ['daily', 'weekly', 'monthly', 'yearly', 'lifetime'].forEach(period => {
-            const tab = document.getElementById(`tab-${period}`);
+            const tab = document.querySelector(`[data-period="${period}"]`);
             if (tab) {
                 tab.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    console.log(`Chart tab ${period} clicked`);
                     this.switchChartPeriod(period);
                 });
             }
@@ -275,44 +216,11 @@ class RamNameJapApp {
         }
     }
 
-    setupShareListeners() {
-        // WhatsApp share
-        const whatsappBtn = document.getElementById('whatsapp-share');
-        if (whatsappBtn) {
-            whatsappBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.shareToWhatsApp();
-            });
-        }
-
-        // Copy link
-        const copyBtn = document.getElementById('copy-link');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.copyShareLink();
-            });
-        }
-
-        // General share
-        const shareBtn = document.getElementById('general-share');
-        if (shareBtn) {
-            shareBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.shareGeneral();
-            });
-        }
-    }
-
     setupSettingsListeners() {
         // Save daily goal
         const saveGoalBtn = document.getElementById('save-goal-btn');
         if (saveGoalBtn) {
             saveGoalBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 this.saveDailyGoal();
             });
@@ -344,7 +252,6 @@ class RamNameJapApp {
         const testSoundBtn = document.getElementById('test-sound-btn');
         if (testSoundBtn) {
             testSoundBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 this.playSound();
                 testSoundBtn.textContent = 'ध्वनि बजाई गई!';
@@ -354,30 +261,51 @@ class RamNameJapApp {
             });
         }
 
-        // Export data
+        // Export and reset data
         const exportBtn = document.getElementById('export-data-btn');
         if (exportBtn) {
             exportBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 this.exportData();
             });
         }
 
-        // Reset data
         const resetBtn = document.getElementById('reset-data-btn');
         if (resetBtn) {
             resetBtn.addEventListener('click', (e) => {
-                e.preventDefault();
                 e.stopPropagation();
                 this.resetData();
             });
         }
     }
 
-    handleTap() {
-        console.log('Tap handled - incrementing counter');
-        this.incrementCounter();
+    setupShareListeners() {
+        // WhatsApp share
+        const whatsappBtn = document.getElementById('whatsapp-share');
+        if (whatsappBtn) {
+            whatsappBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.shareToWhatsApp();
+            });
+        }
+
+        // Copy link
+        const copyBtn = document.getElementById('copy-link');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.copyShareLink();
+            });
+        }
+
+        // General share
+        const shareBtn = document.getElementById('general-share');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.shareGeneral();
+            });
+        }
     }
 
     incrementCounter() {
@@ -388,40 +316,19 @@ class RamNameJapApp {
         this.updateOdometer(this.currentCount);
         this.updateDisplay();
         this.updateProgressRing();
-        this.updateDailyGoal();
+        this.updateProgressBar();
         this.saveData();
         this.checkAchievements();
         this.playSound();
-        this.addRamImageAnimation();
-        this.addTapAnimation();
         this.addHapticFeedback();
-    }
-
-    addRamImageAnimation() {
-        const ramImage = document.querySelector('.ram-image');
-        if (ramImage) {
-            ramImage.classList.add('animate');
-            setTimeout(() => ramImage.classList.remove('animate'), 400);
-        }
-    }
-
-    addTapAnimation() {
-        const centerContainer = document.querySelector('.center-circle-container');
-        if (centerContainer) {
-            centerContainer.classList.add('tap-animate');
-            setTimeout(() => centerContainer.classList.remove('tap-animate'), 300);
-        }
     }
 
     playSound() {
         if (!this.soundEnabled) return;
 
-        console.log('Playing sound...');
-        
         if (this.audio && this.isAudioInitialized) {
             this.audio.currentTime = 0;
             this.audio.play().catch(() => {
-                console.log('MP3 playback failed, using Web Audio API');
                 this.playWebAudioSound();
             });
         } else {
@@ -446,8 +353,6 @@ class RamNameJapApp {
             
             oscillator.start();
             oscillator.stop(audioContext.currentTime + 0.3);
-            
-            console.log('Web Audio sound played');
         } catch (e) {
             console.log('Web Audio API not supported:', e);
         }
@@ -467,8 +372,8 @@ class RamNameJapApp {
     }
 
     updateDisplay() {
+        // Update lifetime count in dashboard
         const lifetimeCount = document.getElementById('lifetime-count');
-        
         if (lifetimeCount) {
             lifetimeCount.textContent = this.currentCount.toLocaleString('hi-IN');
         }
@@ -478,33 +383,44 @@ class RamNameJapApp {
         const progressRing = document.querySelector('.progress-ring-circle');
         if (!progressRing) return;
         
-        const radius = 145;
+        const radius = 125;
         const circumference = 2 * Math.PI * radius;
         
-        const dailyProgress = Math.min(this.getTodayCount() / this.dailyGoal, 1);
+        const todayCount = this.getTodayCount();
+        const dailyProgress = Math.min(todayCount / this.dailyGoal, 1);
         const offset = circumference - (dailyProgress * circumference);
         
-        progressRing.style.strokeDasharray = circumference;
-        progressRing.style.strokeDashoffset = offset;
+        // Static update (no animations)
+        progressRing.style.strokeDasharray = `${circumference}`;
+        progressRing.style.strokeDashoffset = `${offset}`;
     }
 
-    updateDailyGoal() {
+    updateProgressBar() {
         const todayCount = this.getTodayCount();
         const percentage = Math.min((todayCount / this.dailyGoal) * 100, 100);
         
-        const goalText = document.getElementById('daily-goal-text');
-        const goalPercentage = document.getElementById('goal-percentage');
-        const goalFill = document.getElementById('goal-progress-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const progressGoal = document.getElementById('progress-goal');
+        const progressFill = document.getElementById('progress-bar-fill');
         
-        if (goalText) goalText.textContent = this.dailyGoal.toLocaleString('hi-IN');
-        if (goalPercentage) {
-            goalPercentage.textContent = percentage.toFixed(0) + '%';
+        if (progressPercentage) {
             if (percentage >= 100) {
-                goalPercentage.style.color = 'var(--devotional-gold)';
-                goalPercentage.textContent = 'पूरा! 🎉';
+                progressPercentage.style.color = '#FFD700';
+                progressPercentage.textContent = '100% 🎉';
+            } else {
+                progressPercentage.style.color = '#DC143C';
+                progressPercentage.textContent = percentage.toFixed(0) + '%';
             }
         }
-        if (goalFill) goalFill.style.width = percentage + '%';
+        
+        if (progressGoal) {
+            progressGoal.textContent = this.dailyGoal.toLocaleString('hi-IN');
+        }
+        
+        if (progressFill) {
+            // Static update (no animations)
+            progressFill.style.width = percentage + '%';
+        }
     }
 
     getTodayCount() {
@@ -514,60 +430,60 @@ class RamNameJapApp {
     }
 
     navigateToScreen(screenName) {
-        console.log(`=== NAVIGATING TO: ${screenName} ===`);
+        console.log(`=== NAVIGATING TO SCREEN: ${screenName} ===`);
         
-        if (!screenName) {
-            console.error('Invalid screen name');
+        if (!screenName || screenName === this.currentScreen) {
+            console.log('Same screen or invalid screen name');
             return;
         }
 
         try {
-            // Hide all screens
+            // Hide all screens completely
             const allScreens = document.querySelectorAll('.screen');
             allScreens.forEach(screen => {
+                screen.style.display = 'none';
                 screen.classList.remove('active');
             });
 
             // Show target screen
             const targetScreen = document.getElementById(`${screenName}-screen`);
             if (targetScreen) {
+                targetScreen.style.display = 'flex';
                 targetScreen.classList.add('active');
-                console.log(`✓ Screen activated: ${screenName}`);
+                console.log(`✓ Activated screen: ${screenName}`);
             } else {
                 console.error(`✗ Screen not found: ${screenName}-screen`);
+                // Fallback to home screen
+                const homeScreen = document.getElementById('home-screen');
+                if (homeScreen) {
+                    homeScreen.style.display = 'flex';
+                    homeScreen.classList.add('active');
+                }
                 return;
             }
             
-            // Update navigation active state
+            // Update ALL navigation buttons across all screens
             const allNavBtns = document.querySelectorAll('.nav-btn');
             allNavBtns.forEach(btn => {
                 btn.classList.remove('active');
-            });
-            
-            const activeNavBtns = document.querySelectorAll(`[data-screen="${screenName}"]`);
-            activeNavBtns.forEach(btn => {
-                btn.classList.add('active');
+                if (btn.getAttribute('data-screen') === screenName) {
+                    btn.classList.add('active');
+                }
             });
             
             this.currentScreen = screenName;
-            console.log(`✓ Current screen set to: ${this.currentScreen}`);
+            console.log(`✓ Current screen updated to: ${this.currentScreen}`);
             
             // Initialize specific screen content
             if (screenName === 'dashboard') {
-                setTimeout(() => {
-                    this.initializeDashboard();
-                }, 300);
+                setTimeout(() => this.initializeDashboard(), 200);
             } else if (screenName === 'settings') {
-                setTimeout(() => {
-                    this.initializeSettings();
-                }, 100);
+                setTimeout(() => this.initializeSettings(), 100);
             } else if (screenName === 'share') {
-                setTimeout(() => {
-                    this.initializeShare();
-                }, 100);
+                setTimeout(() => this.initializeShare(), 100);
             }
             
-            console.log(`=== NAVIGATION COMPLETE: ${screenName} ===`);
+            console.log(`=== NAVIGATION COMPLETE ===`);
             
         } catch (error) {
             console.error('Navigation error:', error);
@@ -576,6 +492,7 @@ class RamNameJapApp {
 
     initializeDashboard() {
         console.log('Initializing dashboard...');
+        this.updateDisplay();
         this.initializeChart();
         this.renderAchievements();
         this.calculateStreak();
@@ -604,22 +521,21 @@ class RamNameJapApp {
         
         if (totalCount) totalCount.textContent = this.currentCount.toLocaleString('hi-IN');
         if (todayCount) todayCount.textContent = this.getTodayCount().toLocaleString('hi-IN');
-        if (streakCount) {
-            this.calculateStreak();
-            const streak = document.getElementById('current-streak');
-            if (streak) {
-                streakCount.textContent = streak.textContent;
-            }
+        
+        this.calculateStreak();
+        const currentStreakEl = document.getElementById('current-streak');
+        if (streakCount && currentStreakEl) {
+            streakCount.textContent = currentStreakEl.textContent || '0';
         }
         
         if (shareText) {
-            const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें 👉 ramjaap.vercel.app\nजय श्री राम!`;
+            const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें।\nजय श्री राम!`;
             shareText.textContent = message;
         }
     }
 
     shareToWhatsApp() {
-        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें 👉 ramjaap.vercel.app\nजय श्री राम!`;
+        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें।\nजय श्री राम!`;
         
         const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
@@ -635,7 +551,7 @@ class RamNameJapApp {
     }
 
     copyShareLink() {
-        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें 👉 ramjaap.vercel.app\nजय श्री राम!`;
+        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें।\nजय श्री राम!`;
         
         if (navigator.clipboard) {
             navigator.clipboard.writeText(message).then(() => {
@@ -657,8 +573,7 @@ class RamNameJapApp {
             document.execCommand('copy');
             this.showCopySuccess();
         } catch (err) {
-            console.error('Copy failed:', err);
-            alert('कॉपी नहीं हो सका। कृपया मैन्युअल रूप से टेक्स्ट सेलेक्ट करें।');
+            alert('कॉपी नहीं हो सका।');
         }
         document.body.removeChild(textArea);
     }
@@ -668,26 +583,20 @@ class RamNameJapApp {
         if (btn) {
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="share-icon">✅</span>कॉपी हो गया!';
-            btn.style.background = '#28a745';
             setTimeout(() => {
                 btn.innerHTML = originalText;
-                btn.style.background = '';
             }, 2000);
         }
     }
 
     shareGeneral() {
-        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं! आप भी जुड़ें और रोज़ नाम जप करें।`;
+        const message = `मैं 'राम नाम जप काउंटर' ऐप इस्तेमाल कर रहा हूँ। मैंने अब तक ${this.currentCount.toLocaleString('hi-IN')} नाम जप पूरे किए हैं!`;
         
         if (navigator.share) {
             navigator.share({
                 title: 'राम नाम जप काउंटर',
-                text: message,
-                url: 'https://ramjaap.vercel.app'
-            }).then(() => {
-                console.log('Share successful');
-            }).catch((error) => {
-                console.log('Share failed:', error);
+                text: message
+            }).catch(() => {
                 this.copyShareLink();
             });
         } else {
@@ -731,6 +640,7 @@ class RamNameJapApp {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    animation: false, // Disable chart animations
                     plugins: {
                         legend: {
                             display: false
@@ -741,23 +651,11 @@ class RamNameJapApp {
                             beginAtZero: true,
                             grid: {
                                 color: 'rgba(255, 140, 0, 0.1)'
-                            },
-                            ticks: {
-                                color: '#8B4513',
-                                font: {
-                                    family: 'Noto Sans Devanagari'
-                                }
                             }
                         },
                         x: {
                             grid: {
                                 display: false
-                            },
-                            ticks: {
-                                color: '#8B4513',
-                                font: {
-                                    family: 'Noto Sans Devanagari'
-                                }
                             }
                         }
                     }
@@ -930,35 +828,9 @@ class RamNameJapApp {
             
             modal.classList.remove('hidden');
             
-            this.playAchievementSound();
-            
             setTimeout(() => {
                 this.hideAchievementModal();
             }, 5000);
-        }
-    }
-
-    playAchievementSound() {
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            [800, 1000, 1200].forEach((freq, index) => {
-                setTimeout(() => {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                    gainNode.gain.setValueAtTime(this.volume * 0.2, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start();
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                }, index * 200);
-            });
-        } catch (e) {
-            console.log('Achievement sound failed:', e);
         }
     }
 
@@ -995,21 +867,19 @@ class RamNameJapApp {
         if (newGoal && newGoal > 0) {
             this.dailyGoal = newGoal;
             this.saveData();
-            this.updateDailyGoal();
+            this.updateProgressBar();
             this.updateProgressRing();
             
             const btn = document.getElementById('save-goal-btn');
             if (btn) {
                 const originalText = btn.textContent;
                 btn.textContent = 'सेव हो गया! ✓';
-                btn.style.background = '#28a745';
                 setTimeout(() => {
                     btn.textContent = originalText;
-                    btn.style.background = '';
                 }, 2000);
             }
         } else {
-            alert('कृपया एक वैध संख्या दर्ज करें (1 से अधिक)');
+            alert('कृपया एक वैध संख्या दर्ज करें।');
         }
     }
 
@@ -1038,10 +908,8 @@ class RamNameJapApp {
         if (btn) {
             const originalText = btn.textContent;
             btn.textContent = 'एक्सपोर्ट हो गया! ✓';
-            btn.style.background = '#28a745';
             setTimeout(() => {
                 btn.textContent = originalText;
-                btn.style.background = '';
             }, 2000);
         }
     }
@@ -1051,19 +919,21 @@ class RamNameJapApp {
         
         if (confirmation) {
             try {
+                // Clear localStorage
                 const keys = ['currentCount', 'dailyGoal', 'dailyData', 'achievements', 'soundEnabled', 'volume'];
                 keys.forEach(key => localStorage.removeItem(`ramNameJap_${key}`));
                 
+                // Reset app state
                 this.currentCount = 0;
                 this.dailyGoal = 2400;
                 this.soundEnabled = true;
                 this.volume = 0.7;
                 
+                // Re-initialize
                 this.initializeOdometer();
-                this.initializeSettings();
                 this.updateDisplay();
                 this.updateProgressRing();
-                this.updateDailyGoal();
+                this.updateProgressBar();
                 this.renderAchievements();
                 this.calculateStreak();
                 
@@ -1113,7 +983,6 @@ class RamNameJapApp {
             const value = localStorage.getItem(`ramNameJap_${key}`);
             return value ? JSON.parse(value) : null;
         } catch (e) {
-            console.error(`Error loading data for key ${key}:`, e);
             return null;
         }
     }
@@ -1129,7 +998,7 @@ class RamNameJapApp {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing app...');
+    console.log('DOM loaded, initializing Professional Ram Naam Jap App...');
     window.ramApp = new RamNameJapApp();
 });
 
@@ -1146,16 +1015,3 @@ window.addEventListener('beforeunload', () => {
         window.ramApp.saveData();
     }
 });
-
-// Service Worker registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('SW registered: ', registration);
-            })
-            .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
